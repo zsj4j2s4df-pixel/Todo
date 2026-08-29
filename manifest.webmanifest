@@ -1,0 +1,10 @@
+{
+  "name": "Shared Todo",
+  "short_name": "Todo",
+  "description": "Samen waar gewenst. Privé waar nodig.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f3e9",
+  "theme_color": "#f3c928",
+  "lang": "nl-NL"
+}
