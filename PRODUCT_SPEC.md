@@ -1,33 +1,9 @@
-# Product Specification v0.1
+# Product Specification
 
-## Vision
-A private household assistant for partners that combines tasks, calendar and reminders.
+Private household app for partners.
 
-## Principle
-**Samen waar gewenst. Privé waar nodig.**
+Core: accounts, household, privacy, tasks, assignment, categories, priority, target dates, realtime, push, calendar and reminders.
 
-## MVP
-- Account/login
-- Household + partner invitation
-- Private/shared/selected visibility
-- Tasks
-- Assignment
-- Categories
-- Priority
-- Target date
-- Realtime synchronization
-- Push notifications
-- Basic calendar
-- Reminders
-- Responsive PWA
+Privacy modes: PRIVATE, SHARED, SELECTED.
 
-## Later
-- Siri / Shortcuts
-- Quick Capture
-- WhatsApp/share
-- Email/share
-- OpenAI
-- Claude adapter
-- Apple/Google/Outlook calendar
-- Maps
-- MCP
+Later: Siri/Shortcuts, Quick Capture, WhatsApp/share, email, OpenAI, Claude, calendar providers, maps and MCP.

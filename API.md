@@ -1,13 +1,5 @@
-# API Plan
+# API plan
 
-Core resources:
-- /tasks
-- /calendar
-- /reminders
-- /notifications
-- /household
-- /integrations
-- /ai
-- /mcp
+/tasks /calendar /reminders /notifications /household /integrations /ai /mcp.
 
 All writes require validation and authorization.

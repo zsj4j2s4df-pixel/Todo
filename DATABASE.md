@@ -1,17 +1,5 @@
-# Database Plan
+# Database plan
 
-Initial entities:
-- users
-- households
-- household_members
-- tasks
-- task_assignments
-- categories
-- calendar_events
-- reminders
-- notifications
-- integrations
-- permissions
-- audit_logs
+users, households, household_members, tasks, task_assignments, categories, calendar_events, reminders, notifications, integrations, permissions, audit_logs.
 
-Use PostgreSQL constraints, indexes and Row Level Security.
+Use PostgreSQL constraints, indexes and RLS.
