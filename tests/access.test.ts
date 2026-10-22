@@ -1,5 +1,5 @@
 import { PGlite } from "@electric-sql/pglite";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { test, expect } from "vitest";
 test("database enforces private, household, selected shares and owner writes", async () => {
   const db = new PGlite();
@@ -11,20 +11,21 @@ test("database enforces private, household, selected shares and owner writes", a
     `create role anon;create role authenticated;create schema auth;create table auth.users(id uuid primary key);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema auth to authenticated;grant execute on function auth.uid() to authenticated;insert into auth.users values('${a}'),('${b}'),('${c}'),('${d}');`,
   );
   await db.exec(
-    readFileSync("supabase/migrations/202610220001_todo.sql", "utf8"),
+    "alter default privileges in schema public grant all on tables to anon, authenticated;",
   );
-  await db.exec(
-    "grant usage on schema public to authenticated;grant select,insert,update,delete on all tables in schema public to authenticated;",
-  );
-  await db.exec(
-    readFileSync("supabase/migrations/202610220002_notifications.sql", "utf8"),
-  );
+  for (const migration of readdirSync("supabase/migrations")
+    .filter((name) => name.endsWith(".sql"))
+    .sort())
+    await db.exec(readFileSync("supabase/migrations/" + migration, "utf8"));
   async function as(id: string) {
     await db.exec(
       `reset role;set role authenticated;select set_config('request.jwt.claim.sub','${id}',false);`,
     );
   }
   await as(a);
+  await expect(db.query("truncate public.items cascade")).rejects.toThrow();
+  await expect(db.query("select * from household_invites")).rejects.toThrow();
+  await expect(db.query("select private.validate_item()")).rejects.toThrow();
   const h = await db.query<{ id: string }>(
     "select public.create_household('Thuis','A') as id",
   );
