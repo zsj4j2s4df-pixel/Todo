@@ -16,6 +16,9 @@ test("database enforces private, household, selected shares and owner writes", a
   await db.exec(
     "grant usage on schema public to authenticated;grant select,insert,update,delete on all tables in schema public to authenticated;",
   );
+  await db.exec(
+    readFileSync("supabase/migrations/202610220002_notifications.sql", "utf8"),
+  );
   async function as(id: string) {
     await db.exec(
       `reset role;set role authenticated;select set_config('request.jwt.claim.sub','${id}',false);`,
@@ -62,7 +65,7 @@ test("database enforces private, household, selected shares and owner writes", a
         title,
         visibility,
         selected,
-        visibility === "selected" ? [b] : [],
+        visibility === "selected" ? [b, b] : [],
       ],
     );
   }
@@ -114,5 +117,73 @@ test("database enforces private, household, selected shares and owner writes", a
       [a, hid, [c]],
     ),
   ).rejects.toThrow();
+
+  // Only current recipients can read notifications or mark their own rows read.
+  await as(b);
+  const inbox = await db.query<{ id: string; kind: string }>(
+    "select id,kind from notifications",
+  );
+  expect(inbox.rows.map((n) => n.kind)).toEqual(["assignment"]);
+  await db.query("update notifications set read_at=now() where id=$1", [
+    inbox.rows[0].id,
+  ]);
+  await expect(
+    db.query("update notifications set kind='completion' where id=$1", [
+      inbox.rows[0].id,
+    ]),
+  ).rejects.toThrow();
+  await expect(
+    db.query(
+      "insert into notifications(user_id,item_id,kind) values($1,$2,$3)",
+      [b, id, "assignment"],
+    ),
+  ).rejects.toThrow();
+  await db.query(
+    "insert into notification_preferences(user_id,assignment_enabled) values($1,false)",
+    [b],
+  );
+  await expect(
+    db.query("update notification_preferences set user_id=$1", [c]),
+  ).rejects.toThrow();
+  await as(a);
+  expect(
+    (
+      await db.query<{ kind: string }>("select kind from notifications")
+    ).rows.map((n) => n.kind),
+  ).toEqual(["completion"]);
+  await db.query("update items set assignees='{}' where id=$1", [id]);
+  await db.query("update items set assignees=$1 where id=$2", [[b], id]);
+  await as(b);
+  expect((await db.query("select id from notifications")).rows).toHaveLength(1);
+  await as(a);
+  await db.query(
+    "insert into notification_preferences(user_id,completion_enabled) values($1,false)",
+    [a],
+  );
+  await db.query("update items set status='open' where id=$1", [id]);
+  await as(b);
+  await db.query("select public.complete_item($1,true)", [id]);
+  await as(a);
+  expect((await db.query("select id from notifications")).rows).toHaveLength(1);
+  await as(d);
+  expect((await db.query("select id from notifications")).rows).toHaveLength(0);
+  await as(c);
+  expect((await db.query("select id from notifications")).rows).toHaveLength(0);
+  await as(a);
+  await db.query(
+    "update items set visibility='private',assignees='{}',selected_users='{}' where id=$1",
+    [id],
+  );
+  await as(b);
+  expect((await db.query("select id from notifications")).rows).toHaveLength(0);
+  expect(
+    (await db.query("update notifications set read_at=now() returning id"))
+      .rows,
+  ).toHaveLength(0);
+  await as(a);
+  await db.query("delete from items where id=$1", [id]);
+  expect((await db.query("select id from notifications")).rows).toHaveLength(0);
+  await db.exec("reset role;set role anon;");
+  await expect(db.query("select * from notifications")).rejects.toThrow();
   await db.close();
 }, 30000);

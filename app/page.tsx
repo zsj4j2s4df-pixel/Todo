@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { ZodError } from "zod";
 import { supabase } from "@/lib/supabase";
 import {
   blankItem,
@@ -11,7 +12,14 @@ import {
   parseCapture,
 } from "@/lib/model";
 import { SessionRequests } from "@/lib/session";
-import { calendarExport } from "@/lib/calendar";
+import { calendarExport, occursOn } from "@/lib/calendar";
+import NotificationInbox, {
+  InboxNotification,
+  NotificationPreferences,
+} from "@/components/NotificationInbox";
+import MonthCalendar from "@/components/MonthCalendar";
+import DueReminders from "@/components/DueReminders";
+import { captureFromUrl } from "@/lib/capture";
 const key = "todo-device-v1";
 const labels = { task: "Taak", event: "Afspraak", reminder: "Herinnering" };
 function Icon({ name = "check" }: { name?: string }) {
@@ -70,6 +78,14 @@ export default function Home() {
     [houseName, setHouseName] = useState("Ons huishouden"),
     [invite, setInvite] = useState(""),
     [provider, setProvider] = useState("google");
+  const [notifications, setNotifications] = useState<InboxNotification[]>([]);
+  const [preferences, setPreferences] = useState<NotificationPreferences>({
+    assignment_enabled: true,
+    completion_enabled: true,
+  });
+  const [calendarDay, setCalendarDay] = useState<string | null>(null);
+  const [remindersEnabled, setRemindersEnabled] = useState(true);
+  const pendingShare = useRef<string | null>(null);
   const cloud = !!supabase;
   const requests = useRef(new SessionRequests());
   const identity = useRef("");
@@ -79,7 +95,7 @@ export default function Home() {
     await requests.current.run(
       uid,
       async () => {
-        const [rows, member] = await Promise.all([
+        const [rows, member, inbox, prefs] = await Promise.all([
           client
             .from("items")
             .select("*")
@@ -89,9 +105,25 @@ export default function Home() {
             .select("*")
             .eq("user_id", uid)
             .maybeSingle(),
+          client
+            .from("notifications")
+            .select("id,item_id,kind,created_at,read_at")
+            .order("created_at", { ascending: false })
+            .limit(50),
+          client
+            .from("notification_preferences")
+            .select("assignment_enabled,completion_enabled")
+            .eq("user_id", uid)
+            .maybeSingle(),
         ]);
         if (rows.error) throw rows.error;
         if (member.error) throw member.error;
+        if (inbox.error)
+          throw Error(
+            "Meldingen konden niet worden geladen. Controleer of alle database-migraties zijn toegepast.",
+          );
+        if (prefs.error) throw prefs.error;
+
         let people: Member[] = [];
         if (member.data) {
           const all = await client
@@ -109,17 +141,44 @@ export default function Home() {
           })),
           household: member.data?.household_id || null,
           people,
+          notifications: (inbox.data || []) as InboxNotification[],
+          preferences: prefs.data || {
+            assignment_enabled: true,
+            completion_enabled: true,
+          },
         };
       },
       (data) => {
         setItems(data.items);
         setHousehold(data.household);
         setMembers(data.people);
+        setNotifications(data.notifications);
+        setPreferences(data.preferences);
       },
     );
   }
   useEffect(() => {
     setProvider(localStorage.getItem("todo-maps") || "google");
+    setRemindersEnabled(
+      localStorage.getItem("todo-reminder-signals") !== "off",
+    );
+    const incoming = new URL(window.location.href);
+    const received = captureFromUrl(incoming);
+    if (received) {
+      pendingShare.current = received.text;
+      for (const field of ["capture", "title", "text", "url"])
+        incoming.searchParams.delete(field);
+      history.replaceState(
+        null,
+        "",
+        incoming.pathname + incoming.search + incoming.hash,
+      );
+      if (received.truncated)
+        setNotice(
+          "De gedeelde tekst is ingekort tot 5000 tekens. Controleer het concept.",
+        );
+    }
+
     if (!supabase) {
       try {
         const saved = localStorage.getItem(key);
@@ -159,6 +218,9 @@ export default function Home() {
       setItems([]);
       setHousehold(null);
       setMembers([]);
+      setNotifications([]);
+      setPreferences({ assignment_enabled: true, completion_enabled: true });
+
       if (session)
         void load(session.user.id)
           .catch((e) => setError(e.message))
@@ -203,6 +265,62 @@ export default function Home() {
       previous?.focus();
     };
   }, [!!draft, captureOpen, busy]);
+  useEffect(() => {
+    if (ready && (!cloud || signedIn) && pendingShare.current !== null) {
+      setCapture(pendingShare.current);
+      setCaptureOpen(true);
+      pendingShare.current = null;
+    }
+  }, [ready, cloud, signedIn]);
+  async function markRead(id: string) {
+    await action(async () => {
+      if (!supabase) return;
+      const result = await supabase
+        .from("notifications")
+        .update({ read_at: new Date().toISOString() })
+        .eq("id", id)
+        .select("id")
+        .single();
+      if (result.error) throw result.error;
+      await load(user);
+    });
+  }
+  async function savePreferences(next: NotificationPreferences) {
+    await action(async () => {
+      if (!supabase) return;
+      const result = await supabase
+        .from("notification_preferences")
+        .upsert({ user_id: user, ...next })
+        .select("user_id")
+        .single();
+      if (result.error) throw result.error;
+      setPreferences(next);
+      setNotice("Meldingsvoorkeuren opgeslagen.");
+    });
+  }
+  async function snoozeReminder(item: Item) {
+    await action(async () => {
+      const due_at = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+      if (supabase) {
+        const result = await supabase
+          .from("items")
+          .update({ due_at })
+          .eq("id", item.id)
+          .select("id")
+          .single();
+        if (result.error) throw result.error;
+        await load(user);
+      } else
+        persist(
+          items.map((i) =>
+            i.id === item.id
+              ? { ...i, due_at, updated_at: new Date().toISOString() }
+              : i,
+          ),
+        );
+      setNotice("Herinnering 10 minuten uitgesteld.");
+    });
+  }
   async function action(fn: () => Promise<void>) {
     setBusy(true);
     setError("");
@@ -211,7 +329,11 @@ export default function Home() {
       await fn();
     } catch (e) {
       setError(
-        e instanceof Error ? e.message : "Er ging iets mis. Probeer opnieuw.",
+        e instanceof ZodError
+          ? e.issues.map((issue) => issue.message).join(" ")
+          : e instanceof Error
+            ? e.message
+            : "Er ging iets mis. Probeer opnieuw.",
       );
     } finally {
       setBusy(false);
@@ -337,6 +459,7 @@ export default function Home() {
     .filter(
       (i) =>
         (view !== "calendar" || i.kind === "event") &&
+        (view !== "calendar" || !calendarDay || occursOn(i, calendarDay)) &&
         (view !== "reminders" || i.kind === "reminder") &&
         (view !== "today" || !i.due_at || new Date(i.due_at) <= today) &&
         (view !== "tasks" || i.kind === "task") &&
@@ -798,6 +921,59 @@ export default function Home() {
                   </>
                 )}
                 <hr />
+                {cloud && (
+                  <>
+                    <h3>Meldingen binnen de app</h3>
+                    <label className="check-label">
+                      <input
+                        type="checkbox"
+                        checked={preferences.assignment_enabled}
+                        disabled={busy}
+                        onChange={(e) =>
+                          void savePreferences({
+                            ...preferences,
+                            assignment_enabled: e.target.checked,
+                          })
+                        }
+                      />
+                      Nieuwe toewijzingen
+                    </label>
+                    <label className="check-label">
+                      <input
+                        type="checkbox"
+                        checked={preferences.completion_enabled}
+                        disabled={busy}
+                        onChange={(e) =>
+                          void savePreferences({
+                            ...preferences,
+                            completion_enabled: e.target.checked,
+                          })
+                        }
+                      />
+                      Afrondingen
+                    </label>
+                    <p className="hint">
+                      Deze voorkeuren gelden voor je account. Bestaande
+                      meldingen blijven bewaard zolang je toegang hebt tot het
+                      item.
+                    </p>
+                  </>
+                )}
+                <h3>Herinneringssignalen</h3>
+                <label className="check-label">
+                  <input
+                    type="checkbox"
+                    checked={remindersEnabled}
+                    onChange={(e) => {
+                      setRemindersEnabled(e.target.checked);
+                      localStorage.setItem(
+                        "todo-reminder-signals",
+                        e.target.checked ? "on" : "off",
+                      );
+                    }}
+                  />
+                  Toon vervallen herinneringen terwijl de app open is
+                </label>
                 <h3>Over herinneringen</h3>
                 <p>
                   Herinneringen verschijnen in je overzicht. Pushmeldingen en
@@ -808,6 +984,38 @@ export default function Home() {
             </div>
           ) : (
             <>
+              {cloud && (
+                <NotificationInbox
+                  notifications={notifications}
+                  items={items}
+                  busy={busy}
+                  onRead={(id) => void markRead(id)}
+                  onOpen={setDraft}
+                  onRefresh={() => void action(() => load(user))}
+                />
+              )}
+              <DueReminders
+                key={user}
+                items={items}
+                enabled={remindersEnabled}
+                busy={busy}
+                user={user}
+                onOpen={setDraft}
+                onSnooze={(item) => void snoozeReminder(item)}
+              />
+              {view === "calendar" && (
+                <MonthCalendar
+                  items={items.filter(
+                    (i) =>
+                      (filter === "all" || i.status === filter) &&
+                      (i.title + " " + i.description + " " + i.category)
+                        .toLowerCase()
+                        .includes(search.toLowerCase()),
+                  )}
+                  selected={calendarDay}
+                  onSelect={setCalendarDay}
+                />
+              )}
               <section className="overview">
                 <div className="stat">
                   <span>Nog te doen</span>
@@ -818,7 +1026,7 @@ export default function Home() {
                   <div className="stat-line" />
                 </div>
                 <div className="stat">
-                  <span>Met een datum vandaag</span>
+                  <span>Vandaag of eerder</span>
                   <strong>
                     {todayItems.length}
                     <small>items</small>

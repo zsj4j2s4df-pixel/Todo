@@ -44,3 +44,15 @@ describe("input and privacy validation", () => {
   it("encodes map parameters", () =>
     expect(mapLink("A&B #1", "google")).toContain("A%26B%20%231"));
 });
+
+it("does not choose between multiple possible times", () =>
+  expect(parseCapture("Eten 30-10-2026 om 17:00 of 18:00").due).toBe(""));
+it("compares date ranges by instant rather than timezone text", () =>
+  expect(
+    itemSchema.safeParse({
+      ...blankItem("device", null, "event"),
+      title: "Test",
+      due_at: "2026-10-30T17:00:00+02:00",
+      end_at: "2026-10-30T16:30:00Z",
+    }).success,
+  ).toBe(true));

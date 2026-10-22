@@ -34,7 +34,13 @@ export const itemSchema = z
           path: [key],
           message: "Ongeldige datum.",
         });
-    if (v.end_at && v.due_at && v.end_at < v.due_at)
+    if (v.end_at && !v.due_at)
+      ctx.addIssue({
+        code: "custom",
+        path: ["end_at"],
+        message: "Kies eerst een begintijd.",
+      });
+    if (v.end_at && v.due_at && Date.parse(v.end_at) < Date.parse(v.due_at))
       ctx.addIssue({
         code: "custom",
         path: ["end_at"],
@@ -105,7 +111,8 @@ export function parseCapture(text: string) {
   const matches = [
     ...text.matchAll(/\b(\d{1,2})[-/](\d{1,2})(?:[-/](\d{4}))?\b/g),
   ];
-  const time = text.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
+  const times = [...text.matchAll(/\b([01]?\d|2[0-3]):([0-5]\d)\b/g)];
+  const time = times.length === 1 ? times[0] : null;
   let due = "";
   let warning = "Controleer de tekst en kies zelf de datum en tijd.";
   if (matches.length === 1 && matches[0][3] && time) {
@@ -117,7 +124,13 @@ export function parseCapture(text: string) {
       Number(time[1]),
       Number(time[2]),
     );
-    if (d.getDate() === Number(day) && d.getMonth() === Number(month) - 1) {
+    if (
+      d.getFullYear() === Number(year) &&
+      d.getDate() === Number(day) &&
+      d.getMonth() === Number(month) - 1 &&
+      d.getHours() === Number(time[1]) &&
+      d.getMinutes() === Number(time[2])
+    ) {
       due = d.toISOString();
       warning = "Datum herkend. Controleer het concept voordat je opslaat.";
     }

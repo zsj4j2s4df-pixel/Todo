@@ -30,3 +30,29 @@ it("escapes content to prevent calendar property injection and folds UTF-8 safel
     "é".repeat(120) + "\\nATTENDEE:other@example.com",
   );
 });
+
+import { dayKey, monthDays, occursOn } from "../lib/calendar";
+it("lays out six Monday-first weeks across month and year boundaries", () => {
+  const days = monthDays(new Date(2027, 0, 1));
+  expect(days).toHaveLength(42);
+  expect(days[0].getDay()).toBe(1);
+  expect(dayKey(days[0])).toBe("2026-12-28");
+  expect(dayKey(days[41])).toBe("2027-02-07");
+});
+it("shows overnight events on both days and treats midnight end as exclusive", () => {
+  const event = {
+    ...blankItem("device", null, "event"),
+    title: "Nacht",
+    due_at: new Date(2026, 9, 30, 23).toISOString(),
+    end_at: new Date(2026, 9, 31, 1).toISOString(),
+  };
+  expect(occursOn(event, "2026-10-30")).toBe(true);
+  expect(occursOn(event, "2026-10-31")).toBe(true);
+  expect(
+    occursOn(
+      { ...event, end_at: new Date(2026, 9, 31, 0).toISOString() },
+      "2026-10-31",
+    ),
+  ).toBe(false);
+  expect(occursOn({ ...event, end_at: "" }, "2026-10-30")).toBe(true);
+});

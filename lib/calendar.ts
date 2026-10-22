@@ -53,3 +53,28 @@ export function calendarExport(items: Item[]) {
   lines.push("END:VCALENDAR");
   return lines.map(fold).join("\r\n") + "\r\n";
 }
+
+export function dayKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+export function monthDays(month: Date) {
+  const first = new Date(month.getFullYear(), month.getMonth(), 1);
+  const offset = (first.getDay() + 6) % 7;
+  return Array.from(
+    { length: 42 },
+    (_, index) =>
+      new Date(first.getFullYear(), first.getMonth(), 1 - offset + index),
+  );
+}
+export function occursOn(item: Item, day: string) {
+  if (!item.due_at) return false;
+  const [year, month, date] = day.split("-").map(Number);
+  const start = new Date(year, month - 1, date),
+    end = new Date(year, month - 1, date + 1);
+  const begins = new Date(item.due_at);
+  const ends = item.end_at ? new Date(item.end_at) : begins;
+  return (
+    begins < end &&
+    (ends > start || (ends.getTime() === begins.getTime() && begins >= start))
+  );
+}

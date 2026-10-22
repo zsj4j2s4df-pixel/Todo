@@ -944,3 +944,176 @@ hr {
   width: 16px;
   height: 16px;
 }
+.month-calendar {
+  margin: 0 0 25px;
+}
+.month-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+}
+.month-header h2 {
+  margin: 0;
+  text-transform: capitalize;
+}
+.month-header > div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.month-header .secondary {
+  padding: 5px 12px;
+  margin: 0;
+}
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 20px;
+}
+.weekday {
+  text-align: center;
+  color: var(--muted);
+  font-size: 15px;
+  padding: 5px;
+}
+.month-day {
+  position: relative;
+  min-height: 65px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 8px 11px;
+  background: #fffaf266;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.month-day small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.month-day.other-month {
+  opacity: 0.5;
+}
+.month-day.is-today > span {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+.month-day.is-selected {
+  background: var(--yellow-light);
+  border-color: #aa8d3d;
+  opacity: 1;
+}
+.month-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 15px;
+  font-size: 15px;
+  color: var(--muted);
+}
+.month-footer p {
+  margin: 0;
+}
+.due-reminders {
+  background: var(--yellow-light);
+  border: 1px solid #cbb573;
+  border-radius: 16px;
+  padding: 18px 22px;
+  margin-bottom: 25px;
+}
+.due-reminders h2 {
+  margin-bottom: 5px;
+}
+.due-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  border-top: 1px dashed #cbb573;
+  padding: 8px 0;
+}
+.due-row > .text-button {
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.due-row > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.due-row .secondary {
+  font-size: 14px;
+  margin: 0;
+}
+.check-label {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.check-label input {
+  flex-shrink: 0;
+}
+@media (max-width: 720px) {
+  .month-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .month-header h2 {
+    font-size: 28px;
+  }
+  .month-day {
+    padding: 6px;
+    min-height: 53px;
+  }
+  .calendar-event-word {
+    display: none;
+  }
+  .month-grid {
+    gap: 3px;
+  }
+  .month-footer {
+    font-size: 13px;
+  }
+  .due-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .due-row > div {
+    align-self: flex-end;
+  }
+  .due-reminders {
+    padding: 16px;
+  }
+  .month-day small {
+    font-size: 11px;
+  }
+}
+.notification-inbox {
+  margin-bottom: 25px;
+}
+.notification-inbox .section-heading > .text-button {
+  margin-left: auto;
+}
+.notification-inbox > p {
+  color: var(--muted);
+  font-size: 16px;
+}
+.inbox-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border-top: 1px dashed var(--line);
+  padding: 12px 0;
+}
+.inbox-row.is-read {
+  opacity: 0.65;
+}
+.inbox-row > .text-button {
+  flex-shrink: 0;
+}
