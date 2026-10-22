@@ -29,3 +29,11 @@ Project `pyqvxwxpsngbndkrlajz` was leeg en is ingericht met de migraties `202610
 De live beveiligingsadviseur meldt geen bevindingen. De performanceadviseur meldt alleen nog ongebruikte indexen op dit nieuwe lege project; die blijven bewust behouden. De live privacytest slaagt voor afscherming, toewijzing, afronding, meldingen, intrekken van toegang en TRUNCATE-bescherming. Alle fixtures zijn teruggedraaid; er zijn geen gebruikersaccounts of testitems achtergebleven. De app is lokaal geconfigureerd met een publieke publishable key, zonder service-rolekey. Hosting, e-mailbezorging en een daadwerkelijke tweepersoons-loginflow blijven nog open.
 
 De publieke Auth-settings bevestigen dat e-mailaanmelding beschikbaar is en bevestiging vereist. De Data API weigert anonieme taaktoegang met HTTP 401. De frontend-inlogpoort wordt gecontroleerd op mobiel en desktop; er zijn geen bevestigingsmails verzonden.
+
+## Publicatie
+
+Gepubliceerd op **https://todo.zsj4j2s4df.workers.dev/** als Worker `todo` in het bestaande Cloudflare-account. De statische Next.js-export is via een korte asset-uploadsessie geladen. De Worker gebruikt alleen de ASSETS-binding; account-/databaseverkeer gaat naar Supabase. `wrangler.jsonc`, het kleine doorgeefscript, headers en een herhaalbaar deploycommando staan in Git. De eerste live versie is gebaseerd op commit `db4e20f`; de daaropvolgende commit werkt alleen documentatie en de live-testconfiguratie bij.
+
+HTTP 200 en de securityheaders zijn live geverifieerd. Alle vier accountmodus-browsertests slagen ook tegen de publieke URL op mobiel en desktop. Productiebuild, typecheck, Wrangler dry-run en npm audit voor productiedependencies slagen.
+
+De live Supabase-verificatie-endpoint bevestigt dat een e-mailcallback nog naar `http://localhost:3000` terugvalt. Site URL moet in Supabase Auth → URL Configuration op de gepubliceerde URL worden gezet. Dit specifieke configuratie-endpoint ontbreekt in de gekoppelde Supabase-tools. Er zijn geen e-mails verstuurd, geen private gebruikersgegevens gepubliceerd en geen wijzigingen naar main gemerged. Push, AI/MCP, externe agenda's en fysieke apparaattests zijn nog niet toegevoegd aan deze publicatie.

@@ -39,9 +39,15 @@ Eén account hoort bij maximaal één huishouden. De eigenaar beheert items; toe
 
 De bestaande Next.js-stack is behouden. Er zijn geen serverroutes nodig: Supabase verzorgt Auth en de door RLS beveiligde database. `output: 'export'` maakt statische bestanden in `out/`.
 
-Cloudflare Pages: buildcommando `npm ci && npm run build`, outputmap `out`, Node 22+. Stel voor accountmodus de twee publieke Supabase-variabelen in bij de build. Geen Worker-adapter of databasecredential nodig. Bron: https://developers.cloudflare.com/pages/framework-guides/nextjs/deploy-a-static-nextjs-site/.
+De app is gepubliceerd als Cloudflare Worker met Static Assets:
 
-Er is in deze oplevering geen Cloudflare-project aangemaakt of gepubliceerd. De manifest- en service-workerbestanden staan onder `public/`. De service worker cachet geen gebruikersgegevens of API-verzoeken en verwijdert de oude brede Todo-caches. Volledig offline openen en offline accountsynchronisatie zijn niet geïmplementeerd. Installatiegedrag moet nog op echte iOS-/Android-apparaten worden getest.
+**https://todo.zsj4j2s4df.workers.dev/**
+
+`wrangler.jsonc` is de configuratie. Op een machine met Cloudflare-CLI-toegang: `npm ci`, vul de publieke Supabase-bouwvariabelen in en voer `npm run deploy` uit. Dit bouwt de bestaande statische Next.js-app en publiceert de output uit `out/`. Het kleine Worker-script geeft verzoeken door aan de ASSETS-binding; er staan geen databasegeheimen in de Worker. De eerste publicatie is via de gekoppelde Cloudflare-app en een tijdelijke asset-uploadsessie gedaan.
+
+De live homepage, headers, scripts, mobiele/desktop-inlogpoort en ontvangst van gedeelde concepten zijn gecontroleerd. Accountgegevens worden rechtstreeks door Supabase Auth en RLS beveiligd. Verzoeken worden met geredigeerde querystrings gelogd. De server levert veiligheidsheaders; de service worker cachet geen gebruikersdata. Volledig offline openen en offline accountsynchronisatie zijn niet geïmplementeerd. Installatiegedrag moet nog op echte iOS-/Android-apparaten worden getest.
+
+**Nog één dashboardinstelling voor e-mailcallbacks:** in Supabase Auth → URL Configuration staat de Site URL nog op `http://localhost:3000`. Zet die op `https://todo.zsj4j2s4df.workers.dev/` voordat je bevestigings- en herstelmails gebruikt. De beschikbare Supabase-tools kunnen deze Auth-configuratie niet wijzigen. Er zijn geen echte registratie-/herstelmails verstuurd als onderdeel van de publicatie.
 
 ## Controles
 
@@ -69,6 +75,8 @@ Werk vindt plaats op `codex/todo-working-mvp`; main wordt niet rechtstreeks gewi
 
 Project `pyqvxwxpsngbndkrlajz` (Frankfurt, `eu-central-1`) is ingericht op 22 oktober 2026. Alle drie migraties zijn toegepast. De versies in deze repository komen overeen met de geretourneerde live migratiehistorie. Voer migraties niet nogmaals handmatig uit op dit al ingerichte project.
 
-De lokale `.env.local` is ingevuld met uitsluitend de project-URL en een publieke publishable key; deze staat niet in Git. Voor Cloudflare moeten diezelfde publieke bouwvariabelen nog bij de hosting worden ingesteld. De oude variabelenaam `NEXT_PUBLIC_SUPABASE_ANON_KEY` blijft als fallback ondersteund. Interne helpers staan in schema `private`; voeg dit schema niet toe aan de Data API exposed schemas.
+De lokale `.env.local` is ingevuld met uitsluitend de project-URL en een publieke publishable key; deze staat niet in Git. De gepubliceerde frontend is al met die publieke bouwvariabelen gebouwd; bij herpublicatie moeten ze opnieuw in de bouwomgeving beschikbaar zijn. De oude variabelenaam `NEXT_PUBLIC_SUPABASE_ANON_KEY` blijft als fallback ondersteund. Interne helpers staan in schema `private`; voeg dit schema niet toe aan de Data API exposed schemas.
 
 Voor lokale-modusbrowsertests: bouw zonder publieke Supabase-variabelen (bijvoorbeeld `NEXT_PUBLIC_SUPABASE_URL= NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY= NEXT_PUBLIC_SUPABASE_ANON_KEY= npm run build`) en voer `npm run test:e2e` uit. Bouw daarna opnieuw met je gewone configuratie. `npm run test:cloud` controleert de inlogpoort tegen de geconfigureerde productie-export op desktop en mobiel; het maakt geen accounts aan en verstuurt geen e-mails.
+
+Live browsercontroles: `TODO_TEST_URL=https://todo.zsj4j2s4df.workers.dev npm run test:cloud`. Dit voert de vier accountpoort-/concepttests uit tegen de gepubliceerde site zonder accounts aan te maken of e-mails te versturen.
