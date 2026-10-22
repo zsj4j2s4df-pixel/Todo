@@ -26,7 +26,10 @@ Eén account hoort bij maximaal één huishouden. De eigenaar beheert items; toe
 ## Werkende functies
 
 - Taken aanmaken, wijzigen, verwijderen, afronden en heropenen; notities, categorie, prioriteit, streefdatum en optionele nul/meerdere toewijzingen.
-- Vandaag-overzicht, zoeken en filters voor open/afgerond/alles.
+- Vandaag-overzicht, zoeken en filters voor open/afgerond/alles. Dagbrief met maximaal drie stappen en signalering van overlappende afspraken; geen AI-provider nodig.
+- Checklists met maximaal 50 kleine stappen bij taken, afspraken en herinneringen; dezelfde deelrechten als het item.
+- Koffiebruine accenten op licht papier; Canva-icoonfamilie en een verplichte [icoonstijlskill](.agents/skills/todo-icon-style/SKILL.md).
+- Webpush na opt-in per apparaat: algemene meldingen, geplande herinneringen en optioneel een ochtendseintje. Zie [pushbeheer en apparaattests](docs/operations/PUSH.md).
 - Agenda met maandkalender, dagselectie en chronologische afsprakenlijst; begin/eindtijd, tijdzone en locatie. Meerdaagse afspraken worden over de betrokken dagen getoond; eindtijd om middernacht telt niet mee voor de volgende dag.
 - Herinneringen met een signaal in de geopende app (controle elke 30 seconden en bij terugkeer naar het tabblad), 10 minuten uitstellen en tijdelijk verbergen. Signalen zijn per browser uit te zetten; geen achtergrondalarm.
 - Meldingen binnen de app bij toewijzing/afronding, met accountvoorkeuren. Er worden alleen gerechtigde ontvangers geregistreerd; RLS verbergt meldingen zodra toegang tot het item vervalt. Gebruik Vernieuwen om nieuwe meldingen op te halen.
@@ -47,7 +50,7 @@ De app is gepubliceerd als Cloudflare Worker met Static Assets:
 
 De live homepage, headers, scripts, mobiele/desktop-inlogpoort en ontvangst van gedeelde concepten zijn gecontroleerd. Accountgegevens worden rechtstreeks door Supabase Auth en RLS beveiligd. Verzoeken worden met geredigeerde querystrings gelogd. De server levert veiligheidsheaders; de service worker cachet geen gebruikersdata. Volledig offline openen en offline accountsynchronisatie zijn niet geïmplementeerd. Installatiegedrag moet nog op echte iOS-/Android-apparaten worden getest.
 
-**Nog één dashboardinstelling voor e-mailcallbacks:** in Supabase Auth → URL Configuration staat de Site URL nog op `http://localhost:3000`. Zet die op `https://todo.zsj4j2s4df.workers.dev/` voordat je bevestigings- en herstelmails gebruikt. De beschikbare Supabase-tools kunnen deze Auth-configuratie niet wijzigen. Er zijn geen echte registratie-/herstelmails verstuurd als onderdeel van de publicatie.
+Supabase Auth-callbacks wijzen inmiddels naar de gepubliceerde URL; de oude localhost-verwijzing is gecorrigeerd. Echte e-mailbezorging en inloggen blijven op een persoonlijk apparaat te controleren.
 
 ## Controles
 
@@ -59,24 +62,34 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-De lokale database-integratietest voert alle SQL-migraties uit in PGlite (PostgreSQL), met een nagebootste `auth.uid()`-context. Deze test privé-, geselecteerde en gedeelde toegang, scheiding tussen huishoudens, niet-toegestane wijzigingen, toewijzing en eenmalige uitnodigingen. Daarnaast is `supabase/tests/live_privacy.sql` op de echte Supabase-database uitgevoerd; tijdelijke auth-fixtures, huishoudens en items worden binnen één transactie teruggedraaid. Het is geen test van e-mailbezorging of een live frontenddeployment.
+De lokale database-integratietest voert de SQL-migraties uit in PGlite (PostgreSQL), met uitzondering van de Supabase-specifieke Cron/net-installatie, met een nagebootste `auth.uid()`-context. Deze test privé-, geselecteerde en gedeelde toegang, scheiding tussen huishoudens, niet-toegestane wijzigingen, toewijzing en eenmalige uitnodigingen. Daarnaast is `supabase/tests/live_privacy.sql` op de echte Supabase-database uitgevoerd; tijdelijke auth-fixtures, huishoudens en items worden binnen één transactie teruggedraaid. Het is geen test van e-mailbezorging of een live frontenddeployment.
 
 ## Grenzen
 
-Push, native Siri-intents, terugkerende afspraken, externe agenda's, AI, MCP en auditlogs zijn nog niet aangesloten. Geen e-mail/WhatsApp-scraping. Verwijderen vraagt bevestiging; er is nog geen prullenbak. Google Fonts worden extern geladen met lokale lettertypefallbacks. Gebruik geen lokale opslag op een gedeeld apparaat voor gevoelige gegevens.
+Native Siri-intents, terugkerende afspraken, externe agenda's, MCP en auditlogs zijn nog niet aangesloten. Geen e-mail/WhatsApp-scraping. Verwijderen vraagt bevestiging; er is nog geen prullenbak. Google Fonts worden extern geladen met lokale lettertypefallbacks. Gebruik geen lokale opslag op een gedeeld apparaat voor gevoelige gegevens.
 
 Zie [Shortcuts en delen](docs/integrations/SHORTCUTS_AND_SHARE.md) voor de webhandoff met Siri/Apple Shortcuts en de beperkingen van URL-invoer. Het manifest declareert een share-target; fysieke apparaatverificatie staat nog open.
 
-Bij een bestaande andere installatie: pas uitsluitend nog niet toegepaste migraties toe, op volgorde. De meldingenmigratie voegt geen push of externe verzending toe; de API-rechtenmigratie is ook vereist. Het hieronder genoemde live project is al volledig gemigreerd.
+Bij een bestaande andere installatie: pas uitsluitend nog niet toegepaste migraties toe, op volgorde. De meldingenmigratie voegt geen push of externe verzending toe; de API-rechtenmigratie is ook vereist. Voor een nieuwe installatie vereisen push en de planner ook de Vault-inrichting uit docs/operations/PUSH.md. Het hieronder genoemde live project is al volledig gemigreerd.
 
 Werk vindt plaats op `codex/todo-working-mvp`; main wordt niet rechtstreeks gewijzigd en een PR wordt niet automatisch gemerged.
 
 ## Aangesloten Supabase-project
 
-Project `pyqvxwxpsngbndkrlajz` (Frankfurt, `eu-central-1`) is ingericht op 22 oktober 2026. Alle drie migraties zijn toegepast. De versies in deze repository komen overeen met de geretourneerde live migratiehistorie. Voer migraties niet nogmaals handmatig uit op dit al ingerichte project.
+Project `pyqvxwxpsngbndkrlajz` (Frankfurt, `eu-central-1`) is ingericht op 22 oktober 2026. Alle tien migraties zijn toegepast, inclusief push, checklists en de expliciete outboxbeveiliging. De versies in deze repository komen overeen met de geretourneerde live migratiehistorie. Voer migraties niet nogmaals handmatig uit op dit al ingerichte project.
 
-De lokale `.env.local` is ingevuld met uitsluitend de project-URL en een publieke publishable key; deze staat niet in Git. De gepubliceerde frontend is al met die publieke bouwvariabelen gebouwd; bij herpublicatie moeten ze opnieuw in de bouwomgeving beschikbaar zijn. De oude variabelenaam `NEXT_PUBLIC_SUPABASE_ANON_KEY` blijft als fallback ondersteund. Interne helpers staan in schema `private`; voeg dit schema niet toe aan de Data API exposed schemas.
+De lokale `.env.local` is ingevuld met uitsluitend publieke frontendconfiguratie: project-URL, publishable key en publieke VAPID-key; deze staat niet in Git. De gepubliceerde frontend is al met die publieke bouwvariabelen gebouwd; bij herpublicatie moeten ze opnieuw in de bouwomgeving beschikbaar zijn. De oude variabelenaam `NEXT_PUBLIC_SUPABASE_ANON_KEY` blijft als fallback ondersteund. Interne helpers staan in schema `private`; voeg dit schema niet toe aan de Data API exposed schemas.
 
 Voor lokale-modusbrowsertests: bouw zonder publieke Supabase-variabelen (bijvoorbeeld `NEXT_PUBLIC_SUPABASE_URL= NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY= NEXT_PUBLIC_SUPABASE_ANON_KEY= npm run build`) en voer `npm run test:e2e` uit. Bouw daarna opnieuw met je gewone configuratie. `npm run test:cloud` controleert de inlogpoort tegen de geconfigureerde productie-export op desktop en mobiel; het maakt geen accounts aan en verstuurt geen e-mails.
 
 Live browsercontroles: `TODO_TEST_URL=https://todo.zsj4j2s4df.workers.dev npm run test:cloud`. Dit voert de vier accountpoort-/concepttests uit tegen de gepubliceerde site zonder accounts aan te maken of e-mails te versturen.
+
+## Integraties op de planning
+
+[Het connectorplan](docs/architecture/INTEGRATIONS.md) beschrijft mail, agenda, WhatsApp, ChatGPT/Claude via MCP, Codex/Claude Code, Shortcuts, Home Assistant en n8n/Make/Zapier. Dit zijn voorstellen; geen gekoppelde accounts of werkende externe synchronisatie claimen. Agenda-export en gedeelde/plak-invoer werken nu al.
+
+## Assistent en instelbare dagbrief
+
+De briefing bewaart accountvoorkeuren voor tijd, taken/afspraken/overlap en optioneel weer via Open-Meteo. Kies een plaats en twee weermomenten in Instellingen. Buienradar opent als radarwebsite; weer wordt niet als garantie gepresenteerd.
+
+De [OpenAI-assistent](docs/operations/AI.md) gebruikt een bestaande `OPENAI_API_KEY` in Supabase Edge Function Secrets. Typen, opnemen/transcriberen, antwoorden voorlezen en bevestigde beheeracties zijn gebouwd. De AI gebruikt de accountrechten via RLS. Echt doorlopend Realtime-speech is nog niet geïmplementeerd. Controleer de sleutel/modelrechten en stemfuncties met je eigen ingelogde apparaat.

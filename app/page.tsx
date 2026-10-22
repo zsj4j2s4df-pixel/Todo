@@ -20,41 +20,22 @@ import NotificationInbox, {
 import MonthCalendar from "@/components/MonthCalendar";
 import DueReminders from "@/components/DueReminders";
 import { captureFromUrl } from "@/lib/capture";
+import { AIProposal, aiProposalSchema } from "@/lib/ai-proposal";
+import Assistant from "@/components/Assistant";
+import BriefingSettings from "@/components/BriefingSettings";
+import {
+  briefDefaults,
+  briefSchema,
+  normalizeBrief,
+  BriefPreferences,
+} from "@/lib/brief-preferences";
+import ChecklistEditor from "@/components/ChecklistEditor";
+import PushSettings from "@/components/PushSettings";
+import { detachDevicePush } from "@/lib/push";
+import DayBrief from "@/components/DayBrief";
+import Icon from "@/components/AppIcon";
 const key = "todo-device-v1";
 const labels = { task: "Taak", event: "Afspraak", reminder: "Herinnering" };
-function Icon({ name = "check" }: { name?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path
-        d={
-          name === "arrow"
-            ? "M5 19 19 5M7 5h12v12"
-            : name === "plus"
-              ? "M12 4v16M4 12h16"
-              : name === "calendar"
-                ? "M5 5h15v15H4V5m4-3v6m8-6v6M4 11h16"
-                : name === "home"
-                  ? "m3 11 9-8 9 8M5 10v11h14V10M10 21v-7h4v7"
-                  : name === "settings"
-                    ? "M4 7h16M4 17h16M8 4v6m8 4v6"
-                    : name === "list"
-                      ? "M8 6h13M8 12h13M8 18h13M3 6h.1M3 12h.1M3 18h.1"
-                      : name === "bell"
-                        ? "M5 17h14l-2-4V9a5 5 0 0 0-10 0v4l-2 4m5 3h4"
-                        : "m5 12 5 5L20 6"
-        }
-      />
-    </svg>
-  );
-}
 export default function Home() {
   const [items, setItems] = useState<Item[]>([]),
     [ready, setReady] = useState(false),
@@ -83,6 +64,8 @@ export default function Home() {
     assignment_enabled: true,
     completion_enabled: true,
   });
+  const [briefPreferences, setBriefPreferences] =
+    useState<BriefPreferences>(briefDefaults);
   const [calendarDay, setCalendarDay] = useState<string | null>(null);
   const [remindersEnabled, setRemindersEnabled] = useState(true);
   const pendingShare = useRef<string | null>(null);
@@ -95,7 +78,7 @@ export default function Home() {
     await requests.current.run(
       uid,
       async () => {
-        const [rows, member, inbox, prefs] = await Promise.all([
+        const [rows, member, inbox, prefs, briefPrefs] = await Promise.all([
           client
             .from("items")
             .select("*")
@@ -115,6 +98,11 @@ export default function Home() {
             .select("assignment_enabled,completion_enabled")
             .eq("user_id", uid)
             .maybeSingle(),
+          client
+            .from("brief_preferences")
+            .select("*")
+            .eq("user_id", uid)
+            .maybeSingle(),
         ]);
         if (rows.error) throw rows.error;
         if (member.error) throw member.error;
@@ -123,6 +111,7 @@ export default function Home() {
             "Meldingen konden niet worden geladen. Controleer of alle database-migraties zijn toegepast.",
           );
         if (prefs.error) throw prefs.error;
+        if (briefPrefs.error) throw briefPrefs.error;
 
         let people: Member[] = [];
         if (member.data) {
@@ -141,6 +130,12 @@ export default function Home() {
           })),
           household: member.data?.household_id || null,
           people,
+          briefPreferences: briefPrefs.data
+            ? normalizeBrief(briefPrefs.data)
+            : {
+                ...briefDefaults,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+              },
           notifications: (inbox.data || []) as InboxNotification[],
           preferences: prefs.data || {
             assignment_enabled: true,
@@ -154,6 +149,7 @@ export default function Home() {
         setMembers(data.people);
         setNotifications(data.notifications);
         setPreferences(data.preferences);
+        setBriefPreferences(data.briefPreferences);
       },
     );
   }
@@ -181,6 +177,13 @@ export default function Home() {
 
     if (!supabase) {
       try {
+        const brief = localStorage.getItem("todo-device-brief");
+        if (brief) setBriefPreferences(normalizeBrief(JSON.parse(brief)));
+        else
+          setBriefPreferences({
+            ...briefDefaults,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          });
         const saved = localStorage.getItem(key);
         if (saved)
           setItems(JSON.parse(saved).map((i: unknown) => itemSchema.parse(i)));
@@ -203,6 +206,7 @@ export default function Home() {
       const nextUser = session?.user.id || "";
       requests.current.reset(nextUser);
       if (identity.current !== nextUser) {
+        setBriefPreferences(briefDefaults);
         setDraft(null);
         setCaptureOpen(false);
         setCapture("");
@@ -285,6 +289,24 @@ export default function Home() {
       await load(user);
     });
   }
+  async function saveBriefPreferences(next: BriefPreferences) {
+    await action(async () => {
+      const valid = briefSchema.parse(next);
+      if (supabase) {
+        const r = await supabase
+          .from("brief_preferences")
+          .upsert({ user_id: user, ...valid })
+          .select("user_id")
+          .single();
+        if (r.error) throw r.error;
+        await load(user);
+      } else {
+        localStorage.setItem("todo-device-brief", JSON.stringify(valid));
+        setBriefPreferences(valid);
+      }
+      setNotice("Dagbriefing opgeslagen.");
+    });
+  }
   async function savePreferences(next: NotificationPreferences) {
     await action(async () => {
       if (!supabase) return;
@@ -342,6 +364,85 @@ export default function Home() {
   function persist(next: Item[]) {
     localStorage.setItem(key, JSON.stringify(next));
     setItems(next);
+  }
+  async function commitAI(raw: AIProposal) {
+    const proposal = aiProposalSchema.parse(raw);
+    if (proposal.action === "create") {
+      const valid = itemSchema.parse({
+        ...blankItem(user, household, proposal.item.kind),
+        ...proposal.item,
+      });
+      if (supabase) {
+        const r = await supabase
+          .from("items")
+          .insert({
+            ...valid,
+            due_at: valid.due_at || null,
+            end_at: valid.end_at || null,
+          })
+          .select("id")
+          .single();
+        if (r.error) throw Error("Toevoegen is niet gelukt. Probeer opnieuw.");
+        await load(user);
+      } else persist([valid, ...items]);
+    } else {
+      if (!supabase) throw Error("Log eerst in.");
+      if (proposal.action === "complete") {
+        const r = await supabase.rpc("complete_item_if_current", {
+          item_id: proposal.id,
+          done: proposal.done,
+          expected_updated_at: proposal.expected_updated_at,
+        });
+        if (r.error)
+          throw Error(
+            "Het item is gewijzigd of je hebt geen toegang meer. Vraag een nieuw voorstel.",
+          );
+      } else if (proposal.action === "delete") {
+        const r = await supabase
+          .from("items")
+          .delete()
+          .eq("id", proposal.id)
+          .eq("updated_at", proposal.expected_updated_at)
+          .select("id")
+          .single();
+        if (r.error)
+          throw Error(
+            "Verwijderen is niet gelukt. Het item kan zijn gewijzigd of je hebt geen toegang meer.",
+          );
+      } else {
+        const current = await supabase
+          .from("items")
+          .select("*")
+          .eq("id", proposal.id)
+          .single();
+        if (current.error) throw Error("Item niet beschikbaar.");
+        const valid = itemSchema.parse({
+          ...current.data,
+          due_at: current.data.due_at || "",
+          end_at: current.data.end_at || "",
+          ...proposal.patch,
+        });
+        const patch = {
+          ...proposal.patch,
+          ...(proposal.patch.due_at !== undefined
+            ? { due_at: valid.due_at || null }
+            : {}),
+        };
+        const r = await supabase
+          .from("items")
+          .update(patch)
+          .eq("id", proposal.id)
+          .eq("updated_at", proposal.expected_updated_at)
+          .select("id")
+          .single();
+        if (r.error)
+          throw Error(
+            "Het item is gewijzigd of je hebt geen toegang meer. Vraag een nieuw voorstel.",
+          );
+      }
+      await load(user);
+    }
+    setNotice("AI-voorstel uitgevoerd.");
   }
   async function save() {
     if (!draft) return;
@@ -478,12 +579,6 @@ export default function Home() {
     });
   return (
     <div className="app">
-      <svg width="0" height="0" aria-hidden="true">
-        <filter id="wobble">
-          <feTurbulence baseFrequency=".035" numOctaves="2" seed="5" />
-          <feDisplacementMap in="SourceGraphic" scale=".7" />
-        </filter>
-      </svg>
       <aside className="sidebar">
         <a className="brand" href="/">
           todo<span className="brand-dot">.</span>
@@ -496,6 +591,7 @@ export default function Home() {
             ["tasks", "list", "Alle taken"],
             ["calendar", "calendar", "Agenda"],
             ["reminders", "bell", "Herinneringen"],
+            ["assistant", "notebook", "Assistent"],
           ].map(([id, icon, label]) => (
             <button
               key={id}
@@ -518,16 +614,7 @@ export default function Home() {
           ))}
         </nav>
         <div className="sidebar-note">
-          <svg viewBox="0 0 140 100" aria-hidden="true">
-            <g
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            >
-              <path d="m22 27 75-7 7 64-77 9-8-68m4 6 71-8 8 61-75 6M46 12l22-2 4 20-24 1-3-20M46 48l6 5 9-12M69 44l19-2M49 66l6 5 9-12M72 62l18-2M109 21l12 4-8 42-8 10-2-13 11-43m-6 45 7 2" />
-            </g>
-          </svg>
+          <Icon name="notebook" />
           <p>
             Niet alles hoeft vandaag.
             <br />
@@ -577,9 +664,11 @@ export default function Home() {
                     ? "Kleine stappen, grote rust."
                     : view === "calendar"
                       ? "Iets om naar uit te kijken."
-                      : view === "settings"
-                        ? "Helemaal op jouw manier."
-                        : "Op het juiste moment."}
+                      : view === "assistant"
+                        ? "Even samen nadenken."
+                        : view === "settings"
+                          ? "Helemaal op jouw manier."
+                          : "Op het juiste moment."}
               </h1>
               <p className="subtitle">
                 {view === "today"
@@ -589,7 +678,7 @@ export default function Home() {
                     : "Alles op één plek. Jij houdt het overzicht."}
               </p>
             </div>
-            {view !== "settings" && (
+            {view !== "settings" && view !== "assistant" && (
               <button
                 className="primary"
                 disabled={!ready || busy || (cloud && !signedIn)}
@@ -710,6 +799,25 @@ export default function Home() {
                 </button>
               </form>
             </section>
+          ) : view === "assistant" ? (
+            <Assistant
+              key={user}
+              onCommit={commitAI}
+              onDraft={(proposal) => {
+                try {
+                  setDraft(
+                    itemSchema.parse({
+                      ...blankItem(user, household, proposal.kind),
+                      ...proposal,
+                    }),
+                  );
+                } catch {
+                  setError(
+                    "Het AI-concept is niet geldig. Maak zelf een taak aan.",
+                  );
+                }
+              }}
+            />
           ) : view === "settings" ? (
             <div className="settings-grid">
               <section className="panel">
@@ -822,6 +930,7 @@ export default function Home() {
                     className="secondary"
                     onClick={() =>
                       void action(async () => {
+                        await detachDevicePush(user);
                         const r = await supabase!.auth.signOut();
                         if (r.error) throw r.error;
                       })
@@ -959,6 +1068,18 @@ export default function Home() {
                     </p>
                   </>
                 )}
+                <BriefingSettings
+                  value={briefPreferences}
+                  onSave={(next) => void saveBriefPreferences(next)}
+                  busy={busy}
+                />
+                {cloud && signedIn && (
+                  <PushSettings
+                    key={user}
+                    user={user}
+                    deliveryTime={briefPreferences.delivery_time}
+                  />
+                )}
                 <h3>Herinneringssignalen</h3>
                 <label className="check-label">
                   <input
@@ -976,9 +1097,9 @@ export default function Home() {
                 </label>
                 <h3>Over herinneringen</h3>
                 <p>
-                  Herinneringen verschijnen in je overzicht. Pushmeldingen en
-                  Siri zijn nog niet aangesloten. De app belooft geen meldingen
-                  als hij gesloten is.
+                  Herinneringen verschijnen in je overzicht. Push kun je
+                  hierboven per apparaat aanzetten. Siri is nog niet
+                  aangesloten.
                 </p>
               </section>
             </div>
@@ -1016,6 +1137,13 @@ export default function Home() {
                   onSelect={setCalendarDay}
                 />
               )}
+              {view === "today" && (
+                <DayBrief
+                  items={items}
+                  preferences={briefPreferences}
+                  onOpen={setDraft}
+                />
+              )}
               <section className="overview">
                 <div className="stat">
                   <span>Nog te doen</span>
@@ -1048,9 +1176,7 @@ export default function Home() {
                     <br />
                     wat ertoe doet.
                   </p>
-                  <svg viewBox="0 0 80 60" aria-hidden="true">
-                    <path d="M10 45Q28 10 65 20m-10-9 12 8-9 13" />
-                  </svg>
+                  <Icon name="arrow" />
                 </div>
               </section>
               <div className="workspace">
@@ -1063,7 +1189,7 @@ export default function Home() {
                         onClick={() => void action(() => load(user))}
                         aria-label="Vernieuwen"
                       >
-                        ↻
+                        Vernieuwen
                       </button>
                     )}
                     <h2>
@@ -1254,7 +1380,7 @@ export default function Home() {
                         setFilter("open");
                       }}
                     >
-                      Bekijk je agenda →
+                      Bekijk je agenda <Icon name="arrow" />
                     </button>
                   </section>
                   <section className="privacy-card">
@@ -1272,7 +1398,7 @@ export default function Home() {
                       className="text-button"
                       onClick={() => setView("settings")}
                     >
-                      Jouw instellingen →
+                      Jouw instellingen <Icon name="arrow" />
                     </button>
                   </section>
                 </aside>
@@ -1309,7 +1435,7 @@ export default function Home() {
                 disabled={busy}
                 onClick={() => setDraft(null)}
               >
-                ×
+                <Icon name="plus" rotate={45} />
               </button>
             </div>
             <form
@@ -1359,6 +1485,10 @@ export default function Home() {
                     }
                   />
                 </label>
+                <ChecklistEditor
+                  value={draft.checklist || []}
+                  onChange={(checklist) => setDraft({ ...draft, checklist })}
+                />
                 <div className="form-grid">
                   <label>
                     Categorie
@@ -1576,7 +1706,7 @@ export default function Home() {
                 aria-label="Sluiten"
                 onClick={() => setCaptureOpen(false)}
               >
-                ×
+                <Icon name="plus" rotate={45} />
               </button>
             </div>
             <p>Plak een bericht. Je controleert het concept altijd zelf.</p>

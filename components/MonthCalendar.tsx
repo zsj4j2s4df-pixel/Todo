@@ -1,4 +1,5 @@
 "use client";
+import Icon from "./AppIcon";
 import { useState } from "react";
 import type { Item } from "@/lib/model";
 import { dayKey, monthDays, occursOn } from "@/lib/calendar";
@@ -29,7 +30,7 @@ export default function MonthCalendar({
               setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))
             }
           >
-            ←
+            <Icon name="arrow" rotate={-135} />
           </button>
           <button
             className="text-button"
@@ -47,7 +48,7 @@ export default function MonthCalendar({
               setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))
             }
           >
-            →
+            <Icon name="arrow" rotate={45} />
           </button>
         </div>
       </div>

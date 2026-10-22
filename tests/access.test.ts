@@ -8,13 +8,16 @@ test("database enforces private, household, selected shares and owner writes", a
     c = "33333333-3333-4333-8333-333333333333",
     d = "44444444-4444-4444-8444-444444444444";
   await db.exec(
-    `create role anon;create role authenticated;create schema auth;create table auth.users(id uuid primary key);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema auth to authenticated;grant execute on function auth.uid() to authenticated;insert into auth.users values('${a}'),('${b}'),('${c}'),('${d}');`,
+    `create role service_role;create role anon;create role authenticated;create schema auth;create table auth.users(id uuid primary key);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema auth to authenticated;grant execute on function auth.uid() to authenticated;insert into auth.users values('${a}'),('${b}'),('${c}'),('${d}');`,
   );
   await db.exec(
     "alter default privileges in schema public grant all on tables to anon, authenticated;",
   );
   for (const migration of readdirSync("supabase/migrations")
-    .filter((name) => name.endsWith(".sql"))
+    .filter(
+      (name) =>
+        name.endsWith(".sql") && !name.endsWith("_todo_push_schedule.sql"),
+    )
     .sort())
     await db.exec(readFileSync("supabase/migrations/" + migration, "utf8"));
   async function as(id: string) {
@@ -184,7 +187,60 @@ test("database enforces private, household, selected shares and owner writes", a
   await as(a);
   await db.query("delete from items where id=$1", [id]);
   expect((await db.query("select id from notifications")).rows).toHaveLength(0);
+  await as(a);
+  const visibleCount = (
+    await db.query<{ n: number }>("select count(*)::int as n from public.items")
+  ).rows[0].n;
+  expect(
+    (
+      await db.query<{ s: { total: number } }>(
+        "select public.ai_summary() as s",
+      )
+    ).rows[0].s.total,
+  ).toBe(visibleCount);
+  for (let request = 0; request < 12; request++)
+    expect(
+      (
+        await db.query<{ ok: boolean }>(
+          "select public.reserve_ai_request() as ok",
+        )
+      ).rows[0].ok,
+    ).toBe(true);
+  expect(
+    (
+      await db.query<{ ok: boolean }>(
+        "select public.reserve_ai_request() as ok",
+      )
+    ).rows[0].ok,
+  ).toBe(false);
+  expect(
+    (
+      await db.query<{ s: { total: number } }>(
+        "select public.ai_search('Privé','all','all',0) as s",
+      )
+    ).rows[0].s.total,
+  ).toBe(1);
+  await expect(db.query("select * from private.ai_usage")).rejects.toThrow();
+  await as(c);
+  expect(
+    (
+      await db.query<{ s: { total: number } }>(
+        "select public.ai_search('Privé','all','all',0) as s",
+      )
+    ).rows[0].s.total,
+  ).toBe(0);
+  expect(
+    (
+      await db.query<{ s: { total: number } }>(
+        "select public.ai_summary() as s",
+      )
+    ).rows[0].s.total,
+  ).toBe(0);
   await db.exec("reset role;set role anon;");
   await expect(db.query("select * from notifications")).rejects.toThrow();
+  await expect(
+    db.query("select public.reserve_ai_request()"),
+  ).rejects.toThrow();
+  await expect(db.query("select public.ai_summary()")).rejects.toThrow();
   await db.close();
 }, 30000);

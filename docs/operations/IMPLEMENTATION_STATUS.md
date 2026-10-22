@@ -1,39 +1,40 @@
 # Oplevering 22 oktober 2026
 
-De oorspronkelijke rootbestanden zijn op de juiste Next.js-locaties gezet. Tailwind was niet geïnstalleerd; de nieuwe interface gebruikt gewone CSS met centrale papier/inkt/geel-tokens, Caveat en Patrick Hand. Bronnen: Let's Brew house-style SKILL.md, PanKlaar index.html en Kasboek index.html; oudere Kasboek-brief wijkt af van de huidige broncode. Het koffie-specifieke gedrag en Engelstalige UI uit de referenties zijn niet overgenomen.
+App: https://todo.zsj4j2s4df.workers.dev/ — Cloudflare Worker met Static Assets en beveiligde Supabase Auth/PostgreSQL. Werkbranch `codex/todo-working-mvp`, PR #2; main wordt niet automatisch gewijzigd of gemerged.
 
-Fase 1 is gebouwd met lokale persistentie. Fasen 2–4 hebben clientfunctionaliteit plus een Supabase-migratie voor accounts, huishoudens en RLS; de live database is inmiddels ingericht en getest; daadwerkelijke aanmelding en e-mailbezorging vragen nog verificatie met echte accounts. Agenda heeft een maandkalender, dagselectie en chronologische lijst. Herinneringen tonen in de geopende app een vervallen-signaal met 10 minuten uitstellen; geen achtergrondmeldingen. Snelle invoer en navigatielinks werken zonder AI. Fase 5 heeft meldingen binnen de app en accountvoorkeuren, zonder pushbezorging. Fase 7 is niet geïmplementeerd. Een Shortcuts-webhandoff en GET-share-target zijn gebouwd en gedocumenteerd; apparaatverificatie staat nog open.
+## Wat werkt
 
-De architectuur is de al voorgestelde PostgreSQL/Supabase-richting met statische Next.js-export voor Cloudflare Pages. Geselecteerde shares en toewijzingen zijn UUID-arrays op items in plaats van losse tabellen. RLS bepaalt leesrechten; een databasetrigger valideert dat alle personen huishoudenlid zijn en toegewezen personen toegang hebben. Alleen de eigenaar kan details wijzigen/verwijderen. Toegewezen gebruikers kunnen afronden via een begrensde RPC. Er wordt geen database-RLS door clientlogica vervangen.
+Taken, afspraken, herinneringen, privé/gedeeld/geselecteerd, nul/meerdere toewijzingen, afgeschermde huishoudens, in-app meldingen en voorkeuren, maandkalender en dagfilters, agenda-export met bevestiging, navigatielinks, snelle conceptinvoer vanuit tekst/URL/deelblad, lokale back-up/restore en een inlogpoort voor de cloudmodus. Alleen eigenaren wijzigen details; toegewezen personen kunnen afronden/heropenen via een beperkte RPC. Andere gebruikers ophalen gebeurt via Vernieuwen.
 
-Buiten bereik: auditlog, lid verwijderen/huishouden verlaten, realtime abonnementen, pushbezorging, herhaling, providerkoppelingen en live hosting. Geen secrets of service-rolecredentials toegevoegd. Zie README voor configuratie en beperkingen.
+Nieuw: licht papier met koffiebruine accenten; Canva-appicoon en negen bijpassende UI-symbolen via één component. De repository bevat een verplichte icoonstijlskill en bronverantwoording. De beschikbaar gestelde Canva-bronnen zijn 200px-rasterpreviews; appformaten zijn daarvan technisch vergroot, geen vector-/hoogresolutieclaim. Een grotere Canva-export blijft wenselijk voor toekomstig groot drukwerk.
+
+Nieuw: checklists van maximaal 50 stappen, met dezelfde itemrechten en databasevalidatie. Een dagbrief toont maximaal drie volgende stappen en signaleert echte agenda-overlap op basis van zichtbare gegevens. Deze logica gebruikt geen AI of externe accountgegevens.
+
+Nieuw: webpush na expliciete opt-in op ieder apparaat, algemene tekst zonder privétitels, meldingen bij toewijzing/afronding, vervallen herinneringen en een optioneel ochtendseintje. Supabase Vault bewaart de serversleutels; service-role blijft uitsluitend server-side. De dispatcher controleert rechten en voorkeuren opnieuw, dedupliceert en herprobeert begrensd. Zie PUSH.md voor gedrag en beheer. Alle tien migraties zijn toegepast en hun bestandsversies zijn afgestemd op de live historie.
 
 ## Verificatie
 
-- `npm run build`: statische productie-export slaagt.
-- `npm run typecheck`: slaagt.
-- `npm test`: 22 tests slagen, inclusief uitvoering van de echte RLS-migratie in PostgreSQL/PGlite.
-- `npm run test:e2e`: 14 tests slagen op desktop (1440 px) en mobiel (390 px), ook tegen de productie-export.
-- `npm audit --omit=dev`: 0 kwetsbaarheden na expliciete PostCSS 8.5.31 / Sharp 0.35.5 overrides; overrides opnieuw beoordelen bij een Next.js-upgrade.
-- Desktop- en mobiele screenshots visueel gecontroleerd; CI voert de functionele controles opnieuw uit bij een PR.
-- Niet geverifieerd: daadwerkelijke Supabase-aanmelding/e-mailbezorging, echte gedeelde browsersessies, Cloudflare-deployment, fysieke iPhone/iPad/Android-installatie en platformmeldingen.
+Unit- en PostgreSQL/PGlite-tests dekken privacy, geselecteerde shares, toewijzingen, intrekken, TRUNCATE-bescherming, uitnodigingen, in-app meldingen, pushrechten, uitgeschakelde herinneringen, endpointvalidatie, deduplicatie, leases, ingetrokken toegang en verlopen abonnementen. De Supabase-only Cron/net-migratie is live gecontroleerd; de outbox wordt lokaal volledig uitgevoerd. Deno controleert de Edge-code en maakt in een protocoltest een echte VAPID/versleutelde request zonder verzending.
 
-Aanvulling: `.ics`-export met bevestiging, UTC-tijden, stabiele identifiers en ontsnapte/gevouwen tekstvelden. Asynchrone accountverzoeken kunnen na uitloggen of accountwissel geen oude gegevens terugplaatsen; dit is apart getest, ook bij terugkeer naar hetzelfde account.
+Live pushbeheer: Cron actief iedere minuut, drie Vault-secrets aanwezig, gewone gebruikers hebben geen dispatcherrechten. Endpoint zonder geheim geeft 401; met geldige beheersleutel 200 en nul jobs. Er zijn tijdens verificatie geen echte pushberichten of e-mails verstuurd. De oorspronkelijke live privacytest gebruikte tijdelijke fixtures die worden teruggedraaid.
 
-Nieuwe migratie: `20261022185936_todo_notifications.sql` voegt ontvangergebonden meldingen en voorkeuren toe. Triggers registreren nieuwe toewijzingen en afrondingen, respecteren voorkeuren en slaan geen titel/privédetails op. RLS vereist ook bij lezen en als gelezen markeren nog actuele toegang tot het item. De PostgreSQL-test controleert afgeschermde meldingen, ingetrokken rechten, voorkeuren, vervalsing van meldingen en kolomrechten. Deze migratie is inmiddels toegepast op het hieronder genoemde live project.
+Auth-callbacks wijzen nu naar de gepubliceerde URL. De beveiligingsadviseur heeft na de nieuwe migraties geen tabel-/RLS-bevindingen; er blijft een Auth-waarschuwing dat [bescherming tegen gelekte wachtwoorden](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection) uitstaat. Dit is een dashboardinstelling; er is geen betaald plan of extra dienst geactiveerd. Performance heeft uitsluitend informatieve ongebruikte-indexmeldingen; relevante indexen blijven behouden.
 
-## Live Supabase-aansluiting
+## Open
 
-Project `pyqvxwxpsngbndkrlajz` was leeg en is ingericht met de migraties `20261022185927_todo_foundation`, `20261022185936_todo_notifications` en `20261022190135_todo_api_permissions`. Bestandsversies zijn afgestemd op de door Supabase geretourneerde migratiehistorie. De laatste migratie beperkt expliciet tabelrechten (waaronder geen TRUNCATE), plaatst interne functies in het niet-publieke schema private en biedt beperkte invoker-RPC-wrappers voor de app. Indexen en RLS-initplans zijn verbeterd.
+- Echte apparaatverificatie van PWA-installatie en push op iPhone/iPad/Android/Windows, inclusief vergrendeling, Focus en afmelden. Serveracceptatie is geen bewijs van fysieke bezorging.
+- Persoonlijke registratie, bevestigingsmail, herstelmail en een tweepersoons-loginflow; geen testmails naar echte personen sturen.
+- Terugkerende taken/afspraken, huisgenotenbeheer, prullenbak, auditlog en volledige offline/realtime-synchronisatie.
+- Mail-/agenda-OAuth, WhatsApp Business, remote MCP en een externe connector-API. Zie INTEGRATIONS.md voor prioriteit, scope en acceptatie. De bestaande ICS-export en conceptinvoer zijn geen automatische providerkoppeling.
 
-De live beveiligingsadviseur meldt geen bevindingen. De performanceadviseur meldt alleen nog ongebruikte indexen op dit nieuwe lege project; die blijven bewust behouden. De live privacytest slaagt voor afscherming, toewijzing, afronding, meldingen, intrekken van toegang en TRUNCATE-bescherming. Alle fixtures zijn teruggedraaid; er zijn geen gebruikersaccounts of testitems achtergebleven. De app is lokaal geconfigureerd met een publieke publishable key, zonder service-rolekey. Hosting, e-mailbezorging en een daadwerkelijke tweepersoons-loginflow blijven nog open.
+Er staan geen secrets, service-rolekeys of gebruikersgegevens in Git. Externe berichten blijven onbetrouwbare conceptinvoer; de app slaat ze niet automatisch op. Google Fonts gebruikt externe downloads met lokale fallbacks. Clouddata wordt niet door de service worker gecachet.
 
-De publieke Auth-settings bevestigen dat e-mailaanmelding beschikbaar is en bevestiging vereist. De Data API weigert anonieme taaktoegang met HTTP 401. De frontend-inlogpoort wordt gecontroleerd op mobiel en desktop; er zijn geen bevestigingsmails verzonden.
+## Aanvulling: kronkelige huisstijl, weer en OpenAI
 
-## Publicatie
+Alle negen UI-iconen, het appicoon en de penkaders zijn opnieuw met Canva gemaakt met duidelijk kronkelige lijnen zonder liniaal. AGENTS.md en de stijlskill gelden ook voor kaders en scheidingslijnen. De bronbestanden, media-ID’s, hashes en technische omzetting staan in Git. Native browserbediening en zichtbare toetsenbordfocus blijven toegankelijk.
 
-Gepubliceerd op **https://todo.zsj4j2s4df.workers.dev/** als Worker `todo` in het bestaande Cloudflare-account. De statische Next.js-export is via een korte asset-uploadsessie geladen. De Worker gebruikt alleen de ASSETS-binding; account-/databaseverkeer gaat naar Supabase. `wrangler.jsonc`, het kleine doorgeefscript, headers en een herhaalbaar deploycommando staan in Git. De eerste live versie is gebaseerd op commit `db4e20f`; de daaropvolgende commit werkt alleen documentatie en de live-testconfiguratie bij.
+Briefingvoorkeuren zijn persistent per account: eigen tijd, inhoud, weerplaats en twee algemene weermomenten. Open-Meteo levert dagtemperaturen, regenkans en wind. Push kan de gekozen verwachtingen meesturen; geen privétitels. Er is geen automatische weerplaats per afspraak gekoppeld.
 
-HTTP 200 en de securityheaders zijn live geverifieerd. Alle vier accountmodus-browsertests slagen ook tegen de publieke URL op mobiel en desktop. Productiebuild, typecheck, Wrangler dry-run en npm audit voor productiedependencies slagen.
+OpenAI-assistent en transcriptie zijn als Edge Function gepubliceerd. Typen, inspreken, apparaatstem en bevestigde beheeracties zijn gebouwd. De AI zoekt via RLS in alle zichtbare iteminhoud en maakt bewerkbare voorstellen. De bestaande sleutel is door de gebruiker als geactiveerd gemeld; er is geen sleutel uitgelezen of gepubliceerd en geen betaald modelverzoek door de tests gedaan. Zie AI.md voor de precieze testgrens en de nog niet gebouwde OpenAI Realtime-modus.
 
-De live Supabase-verificatie-endpoint bevestigt dat een e-mailcallback nog naar `http://localhost:3000` terugvalt. Site URL moet in Supabase Auth → URL Configuration op de gepubliceerde URL worden gezet. Dit specifieke configuratie-endpoint ontbreekt in de gekoppelde Supabase-tools. Er zijn geen e-mails verstuurd, geen private gebruikersgegevens gepubliceerd en geen wijzigingen naar main gemerged. Push, AI/MCP, externe agenda's en fysieke apparaattests zijn nog niet toegevoegd aan deze publicatie.
+Laatste lokale controle: 29 unit-/PostgreSQL-tests en 18 lokale browsertests slagen. Cloudcontroles testen aanvullend een AI-voorstel met volledig onderschepte synthetische API-fixtures; ze testen geen echte modelrespons of microfoon.

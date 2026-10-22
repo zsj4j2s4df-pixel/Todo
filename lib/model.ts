@@ -7,6 +7,16 @@ export const itemSchema = z
     kind: z.enum(["task", "event", "reminder"]),
     title: z.string().trim().min(1, "Vul een titel in.").max(200),
     description: z.string().max(5000),
+    checklist: z
+      .array(
+        z.object({
+          id: z.string().uuid(),
+          text: z.string().trim().min(1, "Vul een stap in.").max(200),
+          done: z.boolean(),
+        }),
+      )
+      .max(50)
+      .default([]),
     status: z.enum(["open", "done"]),
     priority: z.enum(["low", "normal", "high"]),
     category: z.string().max(80),
@@ -93,6 +103,7 @@ export function blankItem(
     kind,
     title: "",
     description: "",
+    checklist: [],
     status: "open",
     priority: "normal",
     category: "",

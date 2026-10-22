@@ -1,0 +1,22 @@
+{
+  "provider": "Canva",
+  "sheet_media_id": "MAHYxDzIIZ8",
+  "app_media_id": "MAHYxC2VE74",
+  "app_source_resolution": [200, 200],
+  "frame_media_id": "MAHYxChA8rA",
+  "frame_source_resolution": [200, 200],
+  "sheet_source_resolution": [200, 200],
+  "icons": [
+    "home",
+    "list",
+    "calendar",
+    "bell",
+    "settings",
+    "plus",
+    "check",
+    "arrow",
+    "notebook"
+  ],
+  "transform": "Equal 3x3 crop; paper-to-alpha; original stroke geometry retained",
+  "sha256": "e8fdd5d55af30f6d52125ecb46d6f1c155f95b62832b5c41deaab53fddddb997"
+}

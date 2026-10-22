@@ -9,6 +9,8 @@ export const viewport = {
 export const metadata: Metadata = {
   title: "Shared Todo",
   description: "Samen waar gewenst. Privé waar nodig.",
+  icons: { icon: "/icons/icon-32.png", apple: "/icons/icon-180.png" },
+  appleWebApp: { capable: true, title: "Todo", statusBarStyle: "default" },
   manifest: "/manifest.webmanifest",
 };
 export default function RootLayout({

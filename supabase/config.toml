@@ -1,0 +1,7 @@
+project_id = "Todo"
+
+[functions.push-dispatch]
+verify_jwt = false
+
+[functions.todo-ai]
+verify_jwt = true

@@ -6,8 +6,8 @@
   --ink: #3a302a;
   --muted: #7a6c5e;
   --line: #cfc3af;
-  --yellow: #efd477;
-  --yellow-light: #f5e9ba;
+  --accent: #755a43;
+  --accent-soft: #e3d6c6;
   --danger: #9c3d2d;
   --hand: "Caveat", "Segoe Print", cursive;
   --body: "Patrick Hand", "Segoe Print", sans-serif;
@@ -54,10 +54,10 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 3px solid #87650b;
+  outline: 3px solid #674c38;
   outline-offset: 4px;
 }
-svg {
+.app-icon {
   width: 23px;
   height: 23px;
   flex-shrink: 0;
@@ -113,7 +113,7 @@ h3 {
   letter-spacing: -3px;
 }
 .brand-dot {
-  color: #a28122;
+  color: #755a43;
 }
 .brand-line {
   display: block;
@@ -143,12 +143,12 @@ h3 {
   font-size: 19px;
 }
 .nav.active {
-  background: var(--yellow-light);
+  background: var(--accent-soft);
   color: var(--ink);
-  box-shadow: inset 0 0 0 1px #d7c48a;
+  box-shadow: inset 0 0 0 1px #b8a98f;
   transform: rotate(-0.4deg);
 }
-.nav span {
+.nav span:not(.app-icon) {
   margin-left: auto;
   font-size: 15px;
 }
@@ -158,7 +158,7 @@ h3 {
   color: var(--muted);
   font-size: 16px;
 }
-.sidebar-note svg {
+.sidebar-note .app-icon {
   width: 130px;
   height: 100px;
   transform: rotate(-7deg);
@@ -225,7 +225,7 @@ main {
 }
 .primary,
 .secondary {
-  border: 1px solid #bcaa7b;
+  border: 1px solid #6a533f;
   border-radius: 10px;
   padding: 10px 19px;
   display: inline-flex;
@@ -235,12 +235,12 @@ main {
   white-space: nowrap;
 }
 .primary {
-  background: var(--yellow);
-  box-shadow: 2px 3px 0 #cbbf9f;
+  background: var(--accent);
+  box-shadow: 2px 3px 0 #c4b6a5;
   transform: rotate(-0.7deg);
 }
 .primary:hover {
-  background: #e8c65d;
+  background: #624a36;
 }
 .secondary {
   background: var(--card);
@@ -281,7 +281,7 @@ main {
 .stat-line {
   height: 3px;
   width: 32px;
-  background: var(--yellow);
+  background: var(--accent);
   border-radius: 50%;
   margin-top: 9px;
   transform: rotate(-4deg);
@@ -298,14 +298,14 @@ main {
   font: 500 28px/1.15 var(--hand);
   margin: 9px 0;
 }
-.quote svg {
+.quote .app-icon {
   position: absolute;
   right: 0;
   bottom: 10px;
   width: 65px;
   height: 50px;
   fill: none;
-  stroke: #a18b54;
+  stroke: #755a43;
   stroke-width: 1.4;
 }
 .workspace {
@@ -402,12 +402,12 @@ input.search {
   place-items: center;
   transform: rotate(-3deg);
 }
-.checkbox svg {
+.checkbox .app-icon {
   width: 19px;
   height: 19px;
 }
 .completed .checkbox {
-  background: var(--yellow-light);
+  background: var(--accent-soft);
 }
 .completed .task-info strong {
   text-decoration: line-through;
@@ -467,7 +467,7 @@ input.search {
   padding: 34px 10px;
   color: var(--muted);
 }
-.empty > svg {
+.empty > .app-icon {
   width: 35px;
   height: 35px;
   margin-bottom: 9px;
@@ -530,15 +530,15 @@ input.search {
 }
 .privacy-card {
   padding: 24px;
-  border: 1px solid #d8c892;
+  border: 1px solid #b8a98f;
   border-radius: 18px;
-  background: var(--yellow-light);
+  background: var(--accent-soft);
   transform: rotate(0.6deg);
 }
 .mini-mark {
   font-size: 12px;
   letter-spacing: 1px;
-  color: #8a7547;
+  color: #755a43;
 }
 .privacy-card h2 {
   font-size: 28px;
@@ -621,7 +621,7 @@ input[type="checkbox"] {
   min-height: 18px;
   display: inline-block;
   margin: 0 8px 0 0;
-  accent-color: #8b7134;
+  accent-color: #755a43;
 }
 .modal-backdrop {
   position: fixed;
@@ -799,22 +799,22 @@ hr {
     margin: 0;
     width: auto;
   }
-  .nav svg {
+  .nav .app-icon {
     width: 21px;
     height: 21px;
   }
-  .nav span {
+  .nav span:not(.app-icon) {
     display: none;
   }
   .nav.active {
     box-shadow: none;
-    background: var(--yellow-light);
+    background: var(--accent-soft);
   }
   .settings {
     margin: 0;
     font-size: 0;
   }
-  .settings svg {
+  .settings .app-icon {
     width: 22px;
     height: 22px;
   }
@@ -933,14 +933,14 @@ hr {
     transition: none !important;
   }
 }
-.text-button svg,
-.map-link svg {
+.text-button .app-icon,
+.map-link .app-icon {
   width: 15px;
   height: 15px;
   vertical-align: middle;
   margin-left: 3px;
 }
-.row-arrow svg {
+.row-arrow .app-icon {
   width: 16px;
   height: 16px;
 }
@@ -1003,8 +1003,8 @@ hr {
   text-underline-offset: 4px;
 }
 .month-day.is-selected {
-  background: var(--yellow-light);
-  border-color: #aa8d3d;
+  background: var(--accent-soft);
+  border-color: #755a43;
   opacity: 1;
 }
 .month-footer {
@@ -1020,8 +1020,8 @@ hr {
   margin: 0;
 }
 .due-reminders {
-  background: var(--yellow-light);
-  border: 1px solid #cbb573;
+  background: var(--accent-soft);
+  border: 1px solid #b8a98f;
   border-radius: 16px;
   padding: 18px 22px;
   margin-bottom: 25px;
@@ -1034,7 +1034,7 @@ hr {
   justify-content: space-between;
   gap: 12px;
   align-items: center;
-  border-top: 1px dashed #cbb573;
+  border-top: 1px dashed #b8a98f;
   padding: 8px 0;
 }
 .due-row > .text-button {
@@ -1117,3 +1117,243 @@ hr {
 .inbox-row > .text-button {
   flex-shrink: 0;
 }
+
+/* Canva-derived pen masks: all interface symbols use the same source family. */
+.app-icon {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  background: currentColor;
+  mask: var(--icon) center / contain no-repeat;
+  -webkit-mask: var(--icon) center / contain no-repeat;
+  vertical-align: middle;
+}
+.primary {
+  color: #fffaf2;
+}
+.sidebar-note .app-icon {
+  width: 140px;
+  height: 100px;
+}
+.quote .app-icon {
+  color: var(--accent);
+}
+.day-brief {
+  margin-bottom: 25px;
+}
+.day-brief p {
+  max-width: 70ch;
+}
+.day-brief ol {
+  padding-left: 25px;
+  line-height: 1.8;
+}
+.day-brief .text-button {
+  text-align: left;
+}
+.checklist-editor {
+  margin: 20px 0;
+}
+.checklist-step {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.checklist-step input[type="checkbox"] {
+  width: 20px;
+  flex-shrink: 0;
+}
+.checklist-step input:not([type="checkbox"]) {
+  min-width: 0;
+  flex: 1;
+}
+.push-settings {
+  margin: 24px 0;
+  padding-top: 20px;
+  border-top: 1px dashed var(--line);
+}
+/* All drawn outlines come from Canva pen artwork, including form controls. */
+:root {
+  --pen-rule: url("/icons/pen-line.png");
+}
+.panel,
+.stat,
+.privacy-card,
+.notice,
+.modal,
+.due-banner,
+.month-day,
+.primary,
+.secondary,
+input:not([type="checkbox"]),
+select,
+textarea,
+.checkbox {
+  border: 9px solid transparent;
+  border-image: url("/icons/pen-frame.png") 12 stretch;
+  border-image-outset: 2px;
+  border-radius: 19px 12px 23px 11px / 13px 21px 12px 19px;
+}
+.panel,
+.stat,
+.privacy-card,
+.notice,
+.modal,
+.due-banner {
+  border-width: 6px;
+}
+.primary,
+.secondary {
+  border-width: 5px;
+  padding: 7px 15px;
+}
+input:not([type="checkbox"]),
+select,
+textarea {
+  border-width: 5px;
+}
+.checkbox {
+  border-width: 4px;
+}
+.primary {
+  border-image: none;
+  border: 0;
+  position: relative;
+}
+.primary::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  pointer-events: none;
+  background: currentColor;
+  mask: url("/icons/pen-frame.png") center / 100% 100% no-repeat;
+  -webkit-mask: url("/icons/pen-frame.png") center / 100% 100% no-repeat;
+  opacity: 0.8;
+}
+.nav.active {
+  box-shadow: none;
+  border-radius: 31% 18% 24% 19% / 17% 22% 18% 21%;
+}
+.topbar,
+.section-heading,
+.task-row,
+.panel-footer,
+.inbox-row,
+.push-settings,
+.brief-settings,
+.month-footer {
+  border: 0;
+}
+.topbar,
+.section-heading,
+.task-row,
+.inbox-row {
+  background-image: var(--pen-rule);
+  background-repeat: no-repeat;
+  background-position: bottom;
+  background-size: 100% 4px;
+}
+.task-row:last-child {
+  background-image: none;
+}
+.sidebar {
+  border-right: 0;
+  background-image: url("/icons/pen-line.png");
+  background-repeat: no-repeat;
+  background-position: right;
+  background-size: 4px 100%;
+}
+.stat-line {
+  background: var(--accent);
+  mask: var(--pen-rule) center / 100% 100%;
+  -webkit-mask: var(--pen-rule) center / 100% 100%;
+  height: 6px;
+}
+hr {
+  border: 0;
+  height: 5px;
+  background: var(--muted);
+  mask: var(--pen-rule) center / 100% 100%;
+  -webkit-mask: var(--pen-rule) center / 100% 100%;
+}
+.weather-brief,
+.brief-settings {
+  margin-top: 24px;
+  padding-top: 18px;
+}
+.weather-brief h3 {
+  margin-bottom: 12px;
+}
+.weather-brief p {
+  margin-bottom: 8px;
+}
+.place-results {
+  padding-left: 20px;
+}
+.place-results button {
+  text-align: left;
+}
+@media (max-width: 760px) {
+  .sidebar {
+    background-image: none;
+  }
+  .panel,
+  .stat {
+    border-width: 5px;
+  }
+  .month-day {
+    border-width: 3px;
+    padding: 3px;
+  }
+}
+input[type="checkbox"] {
+  appearance: none;
+  flex-shrink: 0;
+  width: 21px;
+  height: 21px;
+  padding: 0;
+  border: 4px solid transparent;
+  border-image: url("/icons/pen-frame.png") 12 stretch;
+  background: var(--card);
+  border-radius: 7px;
+}
+input[type="checkbox"]:checked {
+  background: var(--card) url("/icons/ui/check.png") center / 100% 100%
+    no-repeat;
+}
+a {
+  text-decoration-style: wavy;
+}
+.task-info .done {
+  text-decoration-style: wavy;
+}
+.assistant-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 16px 0;
+}
+.assistant-answer {
+  white-space: pre-wrap;
+  line-height: 1.7;
+  max-width: 80ch;
+  margin: 24px 0;
+  overflow-wrap: anywhere;
+}
+.draft-preview {
+  margin: 20px 0;
+  padding: 18px;
+  background: var(--accent-soft);
+  border-radius: 20px 14px 23px 16px;
+}
+.assistant-panel textarea {
+  min-height: 120px;
+}
+.toolbar,.upcoming-item{border:0;background-image:var(--pen-rule);background-repeat:no-repeat;background-position:bottom;background-size:100% 4px;}
+.file-label,.panel-footer,.modal-actions,.due-row{border:0;background-image:var(--pen-rule);background-repeat:no-repeat;background-position:top;background-size:100% 4px;}
+.text-button{border-bottom:0;}
+.text-button:hover{border:0;background-image:var(--pen-rule);background-repeat:no-repeat;background-position:bottom;background-size:100% 3px;}
+.due-reminders{border:6px solid transparent;border-image:url('/icons/pen-frame.png') 12 stretch;border-image-outset:2px;}
