@@ -31,6 +31,7 @@ Eén account hoort bij maximaal één huishouden. De eigenaar beheert items; toe
 - Herinneringen als opgeslagen items in het overzicht; geen achtergrondalarm.
 - Snelle plak-invoer met bewerkbaar concept. Alleen een volledige geldige `dd-mm-jjjj`-datum plus `uu:mm` wordt voorgesteld. Onvolledige of meerdere datums vereisen handmatige keuze. Niets wordt automatisch opgeslagen.
 - Apple Maps, Google Maps en Waze via gecodeerde links.
+- Agenda-export als `.ics` voor Apple/Google/Outlook, uitsluitend na bevestiging vanwege mogelijk privé-inhoud. Dit is een bestandsexport, geen automatische synchronisatie.
 - Lokale JSON-back-ups, toetsenbordfocus en responsieve mobiele navigatie.
 
 ## Cloudflare

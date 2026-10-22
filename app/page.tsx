@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
   blankItem,
@@ -10,6 +10,8 @@ import {
   mapLink,
   parseCapture,
 } from "@/lib/model";
+import { SessionRequests } from "@/lib/session";
+import { calendarExport } from "@/lib/calendar";
 const key = "todo-device-v1";
 const labels = { task: "Taak", event: "Afspraak", reminder: "Herinnering" };
 function Icon({ name = "check" }: { name?: string }) {
@@ -69,37 +71,52 @@ export default function Home() {
     [invite, setInvite] = useState(""),
     [provider, setProvider] = useState("google");
   const cloud = !!supabase;
+  const requests = useRef(new SessionRequests());
+  const identity = useRef("");
   async function load(uid: string) {
-    if (!supabase) return;
-    const [rows, member] = await Promise.all([
-      supabase
-        .from("items")
-        .select("*")
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("household_members")
-        .select("*")
-        .eq("user_id", uid)
-        .maybeSingle(),
-    ]);
-    if (rows.error) throw rows.error;
-    if (member.error) throw member.error;
-    setItems(
-      (rows.data || []).map((i) => ({
-        ...i,
-        due_at: i.due_at || "",
-        end_at: i.end_at || "",
-      })),
+    const client = supabase;
+    if (!client) return;
+    await requests.current.run(
+      uid,
+      async () => {
+        const [rows, member] = await Promise.all([
+          client
+            .from("items")
+            .select("*")
+            .order("created_at", { ascending: false }),
+          client
+            .from("household_members")
+            .select("*")
+            .eq("user_id", uid)
+            .maybeSingle(),
+        ]);
+        if (rows.error) throw rows.error;
+        if (member.error) throw member.error;
+        let people: Member[] = [];
+        if (member.data) {
+          const all = await client
+            .from("household_members")
+            .select("user_id,display_name")
+            .eq("household_id", member.data.household_id);
+          if (all.error) throw all.error;
+          people = all.data || [];
+        }
+        return {
+          items: (rows.data || []).map((i) => ({
+            ...i,
+            due_at: i.due_at || "",
+            end_at: i.end_at || "",
+          })),
+          household: member.data?.household_id || null,
+          people,
+        };
+      },
+      (data) => {
+        setItems(data.items);
+        setHousehold(data.household);
+        setMembers(data.people);
+      },
     );
-    setHousehold(member.data?.household_id || null);
-    if (member.data) {
-      const all = await supabase
-        .from("household_members")
-        .select("user_id,display_name")
-        .eq("household_id", member.data.household_id);
-      if (all.error) throw all.error;
-      setMembers(all.data || []);
-    } else setMembers([]);
   }
   useEffect(() => {
     setProvider(localStorage.getItem("todo-maps") || "google");
@@ -124,6 +141,19 @@ export default function Home() {
         setRecovery(true);
         setView("settings");
       }
+      const nextUser = session?.user.id || "";
+      requests.current.reset(nextUser);
+      if (identity.current !== nextUser) {
+        setDraft(null);
+        setCaptureOpen(false);
+        setCapture("");
+        setInvite("");
+        setError("");
+        setNotice("");
+        setPassword("");
+        setRecovery(_event === "PASSWORD_RECOVERY");
+      }
+      identity.current = nextUser;
       setUser(session?.user.id || "");
       setSignedIn(!!session);
       setItems([]);
@@ -137,6 +167,7 @@ export default function Home() {
     });
     return () => {
       active = false;
+      requests.current.reset("");
       data.subscription.unsubscribe();
     };
   }, []);
@@ -262,6 +293,29 @@ export default function Home() {
     setError("");
     setDraft(blankItem(user, household, kind));
   }
+  function exportCalendar() {
+    const count = items.filter((i) => i.kind === "event" && i.due_at).length;
+    if (!count) {
+      setNotice("Er zijn nog geen afspraken om te exporteren.");
+      return;
+    }
+    if (
+      !confirm(
+        "Ook zichtbare privéafspraken komen in dit bestand. Exporteer alleen naar een agenda waarmee je deze details wilt delen. Doorgaan?",
+      )
+    )
+      return;
+    const url = URL.createObjectURL(
+      new Blob([calendarExport(items)], {
+        type: "text/calendar;charset=utf-8",
+      }),
+    );
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "todo-agenda.ics";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
   function exportData() {
     const url = URL.createObjectURL(
       new Blob([JSON.stringify(items, null, 2)], { type: "application/json" }),
@@ -361,6 +415,7 @@ export default function Home() {
           className={
             view === "settings" ? "nav active settings" : "nav settings"
           }
+          aria-label="Instellingen"
           onClick={() => setView("settings")}
         >
           <Icon name="settings" />
@@ -543,6 +598,9 @@ export default function Home() {
                 </p>
                 <button className="secondary" onClick={exportData}>
                   JSON-back-up downloaden
+                </button>
+                <button className="secondary" onClick={exportCalendar}>
+                  Agenda downloaden (.ics)
                 </button>
                 {!cloud && (
                   <label className="file-label">

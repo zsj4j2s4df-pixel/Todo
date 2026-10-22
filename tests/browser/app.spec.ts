@@ -84,3 +84,27 @@ test("agenda validates dates, persists events and exposes safe map links", async
     ),
   ).toBe(true);
 });
+
+test("agenda export requires confirmation and downloads an ICS file", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Agenda", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Afspraak toevoegen", exact: true })
+    .click();
+  await page.getByLabel("Titel", { exact: true }).fill("Privé tandarts");
+  await page.getByLabel("Begintijd", { exact: true }).fill("2026-12-25T17:00");
+  await page.getByRole("button", { name: "Opslaan", exact: true }).click();
+  await page.getByRole("button", { name: "Instellingen", exact: true }).click();
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await page
+    .getByRole("button", { name: "Agenda downloaden (.ics)", exact: true })
+    .click();
+  page.once("dialog", (dialog) => dialog.accept());
+  const download = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: "Agenda downloaden (.ics)", exact: true })
+    .click();
+  expect((await download).suggestedFilename()).toBe("todo-agenda.ics");
+});
