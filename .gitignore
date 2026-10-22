@@ -7,3 +7,5 @@ out/
 playwright-report/
 test-results/
 supabase/.temp/
+.wrangler/
+worker/worker-configuration.d.ts
