@@ -24,7 +24,7 @@ Auth-callbacks wijzen nu naar de gepubliceerde URL. De beveiligingsadviseur heef
 
 - Echte apparaatverificatie van PWA-installatie en push op iPhone/iPad/Android/Windows, inclusief vergrendeling, Focus en afmelden. Serveracceptatie is geen bewijs van fysieke bezorging.
 - Persoonlijke registratie, bevestigingsmail, herstelmail en een tweepersoons-loginflow; geen testmails naar echte personen sturen.
-- Terugkerende taken/afspraken, huisgenotenbeheer, prullenbak, auditlog en volledige offline/realtime-synchronisatie.
+- Volledige terugkerende agenda-afspraken, huisgenotenbeheer, prullenbak, auditlog en volledige offline/realtime-synchronisatie.
 - Mail-/agenda-OAuth, WhatsApp Business, remote MCP en een externe connector-API. Zie INTEGRATIONS.md voor prioriteit, scope en acceptatie. De bestaande ICS-export en conceptinvoer zijn geen automatische providerkoppeling.
 
 Er staan geen secrets, service-rolekeys of gebruikersgegevens in Git. Externe berichten blijven onbetrouwbare conceptinvoer; de app slaat ze niet automatisch op. Google Fonts gebruikt externe downloads met lokale fallbacks. Clouddata wordt niet door de service worker gecachet.
@@ -46,3 +46,5 @@ Publicatieverificatie: broncommit `d5ee65e` staat live met Cloudflare deployment
 Gebouwd: kort OpenAI Realtime-gesprek met RLS-toolbrug, gesproken bevestiging, stop-/uitlog-/navigatie-opruiming en server-cleanup; herhaling van taken/herinneringen na afronden met behoud van lokaal tijdanker; bevestigde, gededupliceerde privé-import van losse .ics-afspraken. Zie LIVE_AND_ROUTINES.md. De eerdere opmerking dat doorlopend Realtime nog niet gebouwd was, is hiermee vervallen; de echte provider-/apparaatproef blijft open.
 
 Nog te regelen buiten de beschikbare sessie: persoonlijke microfoon/WebRTC/push-tests, providerkeuze en OAuth/CalDAV-gegevens voor automatische mail-/agendasynchronisatie, Meta-inrichting voor WhatsApp Business en OAuth-inrichting voor publieke MCP-clientkoppelingen. Er is geen extra provideraccount of betaald plan geactiveerd en main blijft ongemerged.
+
+Publicatieverificatie 23 oktober: broncommit `2e9d6b1` staat live met Cloudflare deployment `23288c785eda4f7da1a788ff1e737bba`. Alle veertien databasemigraties zijn live toegepast; `todo-ai` versie 2 en `push-dispatch` versie 4 zijn actief. Typecheck, productiebuild, 41 unit-/PostgreSQL-tests, 22 lokale browsertests, 10 accountbrowsertests en de Deno-Web-Push-protocoltest slagen. De tien accountbrowsertests slagen ook tegen de publieke URL met onderschepte synthetische backend-/modelverzoeken. Homepage, manifest, nieuwe frontendbundle en beveiligingsheaders zijn live gecontroleerd. Dit bewijst geen echte modelrespons, microfoonverbinding of fysieke pushbezorging. Productie-afhankelijkheden hebben bij npm audit geen gemelde kwetsbaarheden.
