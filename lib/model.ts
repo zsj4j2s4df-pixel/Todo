@@ -17,6 +17,15 @@ export const itemSchema = z
       )
       .max(50)
       .default([]),
+    import_uid: z
+      .string()
+      .regex(/^[0-9a-f]{64}$/)
+      .nullable()
+      .default(null),
+    repeat_kind: z.enum(["none", "daily", "weekly", "monthly"]).default("none"),
+    repeat_anchor: z.string().nullable().default(null),
+    repeat_index: z.number().int().min(0).max(1000000).default(0),
+    repeat_source: z.string().uuid().nullable().default(null),
     status: z.enum(["open", "done"]),
     priority: z.enum(["low", "normal", "high"]),
     category: z.string().max(80),
@@ -31,6 +40,24 @@ export const itemSchema = z
     updated_at: z.string(),
   })
   .superRefine((v, ctx) => {
+    if (v.repeat_kind !== "none") {
+      if (!v.due_at || v.kind === "event")
+        ctx.addIssue({
+          code: "custom",
+          path: ["repeat_kind"],
+          message: "Herhalen kan bij taken en herinneringen met een datum.",
+        });
+      try {
+        new Intl.DateTimeFormat("nl", { timeZone: v.timezone });
+      } catch {
+        ctx.addIssue({
+          code: "custom",
+          path: ["timezone"],
+          message: "Kies een geldige tijdzone.",
+        });
+      }
+    }
+
     if (v.kind !== "task" && !v.due_at)
       ctx.addIssue({
         code: "custom",
@@ -91,6 +118,22 @@ export const itemSchema = z
   });
 export type Item = z.infer<typeof itemSchema>;
 export type Member = { user_id: string; display_name: string };
+export function prepareRepeat(item: Item, previous?: Item): Item {
+  if (item.repeat_kind === "none")
+    return { ...item, repeat_anchor: null, repeat_index: 0 };
+  if (
+    previous &&
+    previous.due_at === item.due_at &&
+    previous.repeat_kind === item.repeat_kind &&
+    previous.timezone === item.timezone
+  )
+    return {
+      ...item,
+      repeat_anchor: previous.repeat_anchor || previous.due_at,
+      repeat_index: previous.repeat_index,
+    };
+  return { ...item, repeat_anchor: item.due_at, repeat_index: 0 };
+}
 export function blankItem(
   owner_id: string,
   household_id: string | null,
@@ -104,6 +147,11 @@ export function blankItem(
     title: "",
     description: "",
     checklist: [],
+    import_uid: null,
+    repeat_kind: "none",
+    repeat_anchor: null,
+    repeat_index: 0,
+    repeat_source: null,
     status: "open",
     priority: "normal",
     category: "",

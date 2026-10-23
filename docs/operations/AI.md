@@ -30,6 +30,6 @@ Serverlimieten: 12 aanvragen per gebruiker per uur, 40 per gebruiker per UTC-dag
 
 ## OpenAI Realtime / GPT Live
 
-Het huidige gesproken pad is opname → transcriptie → Responses API → apparaatstem. Een doorlopend speech-to-speechgesprek met onderbrekingen via OpenAI Realtime is nog niet gebouwd. De aanbevolen volgende adapter gebruikt WebRTC, een servermatig aangemaakte kortlevende client credential en dezelfde beperkte zoek-/voorsteltools. Een permanente sleutel mag nooit de browser in. Bevestiging moet uit de daadwerkelijke gebruikersinvoer volgen, niet uit een modeltool of opgeslagen tekst. Voor publicatie zijn ook serverlimieten op sessieduur, expliciet stoppen, audio-opruiming bij uitloggen en tests op echte apparaten nodig.
+De opname/transcriptie-modus blijft beschikbaar. Daarnaast is een apart doorlopend OpenAI Realtime-gesprek gebouwd met WebRTC, dezelfde RLS-tools, expliciete bevestiging, sessieduur en server-cleanup. Zie [Live en routines](LIVE_AND_ROUTINES.md) voor de precieze limieten en testgrens. Dit gebruikt Realtime (`gpt-realtime-2.1`), niet de afzonderlijke GPT-Live-1 API. Echte provider- en apparaattests blijven open.
 
 Bronnen: [Responses API](https://developers.openai.com/api/docs/guides/text), [spraak naar tekst](https://developers.openai.com/api/docs/guides/speech-to-text), [Realtime](https://developers.openai.com/api/docs/guides/realtime), [Supabase functie-autorisatie](https://supabase.com/docs/guides/functions/auth-headers).

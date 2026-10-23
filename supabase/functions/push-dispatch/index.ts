@@ -1,5 +1,6 @@
 // Own shared-secret authentication below: gateway verify_jwt is deliberately off.
 // VAPID credentials stay in Vault; service_role exists only in this server runtime.
+import { hangupRealtime } from "../_shared/realtime.ts";
 import { fetchWeather } from "../_shared/weather.ts";
 import webpush from "npm:web-push@3.6.7";
 import { createClient } from "npm:@supabase/supabase-js@2.118.0";
@@ -20,6 +21,22 @@ Deno.serve(async (req: Request) => {
   });
   if (error)
     return new Response("Unauthorized or unavailable", { status: 401 });
+  const cleanup = await client.rpc("claim_realtime_cleanup", {
+    dispatch_key: token,
+  });
+  if (cleanup.error)
+    return new Response("Cleanup unavailable", { status: 503 });
+  const apiKey = Deno.env.get("OPENAI_API_KEY");
+  if (apiKey)
+    await Promise.all(
+      (cleanup.data || []).map(async (session: any) => {
+        if (await hangupRealtime(apiKey, session.call_id))
+          await client.rpc("finish_realtime_call", {
+            session_id: session.id,
+            provider_call_id: session.call_id,
+          });
+      }),
+    );
   let accepted = 0;
   const forecasts = new Map<
     string,

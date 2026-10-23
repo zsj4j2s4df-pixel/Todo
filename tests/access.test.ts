@@ -16,7 +16,9 @@ test("database enforces private, household, selected shares and owner writes", a
   for (const migration of readdirSync("supabase/migrations")
     .filter(
       (name) =>
-        name.endsWith(".sql") && !name.endsWith("_todo_push_schedule.sql"),
+        name.endsWith(".sql") &&
+        !name.endsWith("_todo_push_schedule.sql") &&
+        !name.endsWith("_todo_realtime_schedule.sql"),
     )
     .sort())
     await db.exec(readFileSync("supabase/migrations/" + migration, "utf8"));

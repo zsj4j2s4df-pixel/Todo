@@ -58,7 +58,12 @@ test("push subscriptions and outbox enforce identity, privacy, opt-in, lease and
     `create role anon;create role authenticated;create role service_role;create schema auth;create table auth.users(id uuid primary key);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema auth to authenticated;grant execute on function auth.uid() to authenticated;create schema vault;create table vault.decrypted_secrets(name text primary key,decrypted_secret text);insert into vault.decrypted_secrets values('todo_push_dispatch_key','test-dispatch-key-not-a-real-secret-123456'),('todo_push_vapid_public','test-public'),('todo_push_vapid_private','test-private');insert into auth.users values('${a}'),('${b}');alter default privileges in schema public grant all on tables to anon,authenticated;`,
   );
   for (const name of readdirSync("supabase/migrations")
-    .filter((n) => n.endsWith(".sql") && !n.endsWith("_todo_push_schedule.sql"))
+    .filter(
+      (n) =>
+        n.endsWith(".sql") &&
+        !n.endsWith("_todo_push_schedule.sql") &&
+        !n.endsWith("_todo_realtime_schedule.sql"),
+    )
     .sort())
     await db.exec(readFileSync("supabase/migrations/" + name, "utf8"));
   async function as(id: string) {

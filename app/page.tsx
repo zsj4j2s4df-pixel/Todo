@@ -4,6 +4,7 @@ import { ZodError } from "zod";
 import { supabase } from "@/lib/supabase";
 import {
   blankItem,
+  prepareRepeat,
   itemSchema,
   Item,
   Member,
@@ -21,6 +22,7 @@ import MonthCalendar from "@/components/MonthCalendar";
 import DueReminders from "@/components/DueReminders";
 import { captureFromUrl } from "@/lib/capture";
 import { AIProposal, aiProposalSchema } from "@/lib/ai-proposal";
+import CalendarImport from "@/components/CalendarImport";
 import Assistant from "@/components/Assistant";
 import BriefingSettings from "@/components/BriefingSettings";
 import {
@@ -365,6 +367,50 @@ export default function Home() {
     localStorage.setItem(key, JSON.stringify(next));
     setItems(next);
   }
+  async function importCalendar(incoming: Item[]): Promise<number> {
+    if (!incoming.length || incoming.length > 100)
+      throw Error("Kies maximaal 100 afspraken.");
+    const values = incoming.map((i) =>
+      itemSchema.parse({
+        ...i,
+        owner_id: user,
+        household_id: household,
+        visibility: "private",
+        assignees: [],
+        selected_users: [],
+        kind: "event",
+        repeat_kind: "none",
+        repeat_anchor: null,
+        repeat_index: 0,
+        repeat_source: null,
+      }),
+    );
+    if (values.some((i) => !i.import_uid))
+      throw Error("De afspraak mist een importkenmerk.");
+    if (supabase) {
+      const result = await supabase
+        .from("items")
+        .upsert(
+          values.map((i) => ({
+            ...i,
+            due_at: i.due_at || null,
+            end_at: i.end_at || null,
+          })),
+          { onConflict: "owner_id,import_uid", ignoreDuplicates: true },
+        )
+        .select("id");
+      if (result.error)
+        throw Error(
+          "Importeren is niet gelukt. Er is niets toegevoegd. Probeer opnieuw.",
+        );
+      await load(user);
+      return result.data?.length || 0;
+    }
+    const existing = new Set(items.map((i) => i.import_uid).filter(Boolean));
+    const fresh = values.filter((i) => !existing.has(i.import_uid));
+    persist([...fresh, ...items]);
+    return fresh.length;
+  }
   async function commitAI(raw: AIProposal) {
     const proposal = aiProposalSchema.parse(raw);
     if (proposal.action === "create") {
@@ -447,7 +493,7 @@ export default function Home() {
   async function save() {
     if (!draft) return;
     await action(async () => {
-      const valid = itemSchema.parse({
+      let valid = itemSchema.parse({
         ...draft,
         updated_at: new Date().toISOString(),
       });
@@ -468,7 +514,13 @@ export default function Home() {
           : await supabase.from("items").insert(payload).select("id").single();
         if (result.error) throw result.error;
         await load(user);
-      } else persist([valid, ...items.filter((i) => i.id !== valid.id)]);
+      } else {
+        valid = prepareRepeat(
+          valid,
+          items.find((i) => i.id === valid.id),
+        );
+        persist([valid, ...items.filter((i) => i.id !== valid.id)]);
+      }
       setDraft(null);
       setNotice("Opgeslagen.");
     });
@@ -482,18 +534,10 @@ export default function Home() {
         });
         if (result.error) throw result.error;
         await load(user);
-      } else
-        persist(
-          items.map((x) =>
-            x.id === i.id
-              ? {
-                  ...x,
-                  status: x.status === "done" ? "open" : "done",
-                  updated_at: new Date().toISOString(),
-                }
-              : x,
-          ),
-        );
+      } else {
+        const complete = (await import("@/lib/repeat")).completeLocal;
+        persist(complete(items, i, i.status !== "done"));
+      }
     });
   }
   async function remove(i: Item) {
@@ -833,6 +877,14 @@ export default function Home() {
                 <button className="secondary" onClick={exportCalendar}>
                   Agenda downloaden (.ics)
                 </button>
+                <CalendarImport
+                  key={user}
+                  user={user}
+                  household={household}
+                  existing={items}
+                  busy={busy}
+                  onImport={importCalendar}
+                />
                 {!cloud && (
                   <label className="file-label">
                     Back-up terugzetten
@@ -1270,6 +1322,9 @@ export default function Home() {
                               <strong>{i.title}</strong>
                               <span>
                                 {i.category || labels[i.kind]}
+                                {i.repeat_kind &&
+                                  i.repeat_kind !== "none" &&
+                                  ` · ${{ daily: "dagelijks", weekly: "wekelijks", monthly: "maandelijks" }[i.repeat_kind]}`}
                                 <b>·</b>
                                 {i.visibility === "private"
                                   ? "Alleen jij"
@@ -1453,6 +1508,9 @@ export default function Home() {
                       setDraft({
                         ...draft,
                         kind: e.target.value as Item["kind"],
+                        ...(e.target.value === "event"
+                          ? { repeat_kind: "none" as const }
+                          : {}),
                       })
                     }
                   >
@@ -1551,6 +1609,34 @@ export default function Home() {
                     </label>
                   )}
                 </div>
+                {draft.kind !== "event" && (
+                  <>
+                    <label>
+                      Herhalen na afronden
+                      <select
+                        value={draft.repeat_kind || "none"}
+                        onChange={(e) =>
+                          setDraft({
+                            ...draft,
+                            repeat_kind: e.target.value as Item["repeat_kind"],
+                          })
+                        }
+                      >
+                        <option value="none">Niet herhalen</option>
+                        <option value="daily">Dagelijks</option>
+                        <option value="weekly">Wekelijks</option>
+                        <option value="monthly">Maandelijks</option>
+                      </select>
+                    </label>
+                    <p className="hint">
+                      Na afronden verschijnt één volgende taak of herinnering.
+                      Gemiste momenten worden overgeslagen; checkliststappen
+                      beginnen opnieuw. Heropenen verwijdert de volgende taak
+                      niet. Kies “Niet herhalen” op de volgende taak om de
+                      routine te stoppen.
+                    </p>
+                  </>
+                )}
                 <p className="hint">
                   Tijden in {draft.timezone}; getoond in de tijdzone van dit
                   apparaat.

@@ -66,7 +66,7 @@ De lokale database-integratietest voert de SQL-migraties uit in PGlite (PostgreS
 
 ## Grenzen
 
-Native Siri-intents, terugkerende afspraken, externe agenda's, MCP en auditlogs zijn nog niet aangesloten. Geen e-mail/WhatsApp-scraping. Verwijderen vraagt bevestiging; er is nog geen prullenbak. Google Fonts worden extern geladen met lokale lettertypefallbacks. Gebruik geen lokale opslag op een gedeeld apparaat voor gevoelige gegevens.
+Native Siri-intents, volledige terugkerende agenda-afspraken, externe agenda's, MCP en auditlogs zijn nog niet aangesloten. Geen e-mail/WhatsApp-scraping. Verwijderen vraagt bevestiging; er is nog geen prullenbak. Google Fonts worden extern geladen met lokale lettertypefallbacks. Gebruik geen lokale opslag op een gedeeld apparaat voor gevoelige gegevens.
 
 Zie [Shortcuts en delen](docs/integrations/SHORTCUTS_AND_SHARE.md) voor de webhandoff met Siri/Apple Shortcuts en de beperkingen van URL-invoer. Het manifest declareert een share-target; fysieke apparaatverificatie staat nog open.
 
@@ -76,7 +76,7 @@ Werk vindt plaats op `codex/todo-working-mvp`; main wordt niet rechtstreeks gewi
 
 ## Aangesloten Supabase-project
 
-Project `pyqvxwxpsngbndkrlajz` (Frankfurt, `eu-central-1`) is ingericht op 22 oktober 2026. Alle tien migraties zijn toegepast, inclusief push, checklists en de expliciete outboxbeveiliging. De versies in deze repository komen overeen met de geretourneerde live migratiehistorie. Voer migraties niet nogmaals handmatig uit op dit al ingerichte project.
+Project `pyqvxwxpsngbndkrlajz` (Frankfurt, `eu-central-1`) is ingericht op 22 oktober 2026. Alle veertien migraties zijn toegepast, inclusief push, checklists en de expliciete outboxbeveiliging. De versies in deze repository komen overeen met de geretourneerde live migratiehistorie. Voer migraties niet nogmaals handmatig uit op dit al ingerichte project.
 
 De lokale `.env.local` is ingevuld met uitsluitend publieke frontendconfiguratie: project-URL, publishable key en publieke VAPID-key; deze staat niet in Git. De gepubliceerde frontend is al met die publieke bouwvariabelen gebouwd; bij herpublicatie moeten ze opnieuw in de bouwomgeving beschikbaar zijn. De oude variabelenaam `NEXT_PUBLIC_SUPABASE_ANON_KEY` blijft als fallback ondersteund. Interne helpers staan in schema `private`; voeg dit schema niet toe aan de Data API exposed schemas.
 
@@ -92,4 +92,8 @@ Live browsercontroles: `TODO_TEST_URL=https://todo.zsj4j2s4df.workers.dev npm ru
 
 De briefing bewaart accountvoorkeuren voor tijd, taken/afspraken/overlap en optioneel weer via Open-Meteo. Kies een plaats en twee weermomenten in Instellingen. Buienradar opent als radarwebsite; weer wordt niet als garantie gepresenteerd.
 
-De [OpenAI-assistent](docs/operations/AI.md) gebruikt een bestaande `OPENAI_API_KEY` in Supabase Edge Function Secrets. Typen, opnemen/transcriberen, antwoorden voorlezen en bevestigde beheeracties zijn gebouwd. De AI gebruikt de accountrechten via RLS. Echt doorlopend Realtime-speech is nog niet geïmplementeerd. Controleer de sleutel/modelrechten en stemfuncties met je eigen ingelogde apparaat.
+De [OpenAI-assistent](docs/operations/AI.md) gebruikt een bestaande `OPENAI_API_KEY` in Supabase Edge Function Secrets. Typen, opnemen/transcriberen, antwoorden voorlezen en bevestigde beheeracties zijn gebouwd. De AI gebruikt de accountrechten via RLS. Een apart kort livegesprek via OpenAI Realtime is toegevoegd; provider- en apparaattests blijven nodig. Controleer de sleutel/modelrechten en stemfuncties met je eigen ingelogde apparaat.
+
+## Livegesprek, routines en agenda-import
+
+[De vervolgfase](docs/operations/LIVE_AND_ROUTINES.md) voegt een echt WebRTC-spraakpad, dagelijkse/wekelijkse/maandelijkse taken en herinneringen na afronden, en bevestigde privé-import uit .ics toe. De routines gebruiken dezelfde tijdzoneberekening in cloud en lokale modus. Import is eenmalig; mail-/agenda-OAuth en remote MCP zijn nog niet gekoppeld.

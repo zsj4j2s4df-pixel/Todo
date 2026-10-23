@@ -40,3 +40,9 @@ OpenAI-assistent en transcriptie zijn als Edge Function gepubliceerd. Typen, ins
 Laatste lokale controle: 29 unit-/PostgreSQL-tests en 18 lokale browsertests slagen. Cloudcontroles testen aanvullend een AI-voorstel met volledig onderschepte synthetische API-fixtures; ze testen geen echte modelrespons of microfoon.
 
 Publicatieverificatie: broncommit `d5ee65e` staat live met Cloudflare deployment `e6db5b1b23d54a01a20c1ff117485264`. De zes cloudbrowsertests slagen ook tegen de publieke URL op desktop en mobiel. Microfoontoestemming voor de eigen oorsprong en de twee weer-API-origins staan in de live securityheaders. De extra Deno-Web-Push-protocoltest slaagt zonder verzending. PR #2 is bijgewerkt; main is niet gemerged.
+
+## Vervolg 23 oktober 2026
+
+Gebouwd: kort OpenAI Realtime-gesprek met RLS-toolbrug, gesproken bevestiging, stop-/uitlog-/navigatie-opruiming en server-cleanup; herhaling van taken/herinneringen na afronden met behoud van lokaal tijdanker; bevestigde, gededupliceerde privé-import van losse .ics-afspraken. Zie LIVE_AND_ROUTINES.md. De eerdere opmerking dat doorlopend Realtime nog niet gebouwd was, is hiermee vervallen; de echte provider-/apparaatproef blijft open.
+
+Nog te regelen buiten de beschikbare sessie: persoonlijke microfoon/WebRTC/push-tests, providerkeuze en OAuth/CalDAV-gegevens voor automatische mail-/agendasynchronisatie, Meta-inrichting voor WhatsApp Business en OAuth-inrichting voor publieke MCP-clientkoppelingen. Er is geen extra provideraccount of betaald plan geactiveerd en main blijft ongemerged.

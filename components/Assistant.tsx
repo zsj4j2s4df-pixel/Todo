@@ -1,4 +1,6 @@
 "use client";
+import { confirmsProposal } from "@/lib/voice-confirmation";
+import RealtimeConversation from "./RealtimeConversation";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { aiProposalSchema, AIProposal } from "@/lib/ai-proposal";
@@ -12,6 +14,8 @@ export default function Assistant({
   onDraft: (p: Proposal) => void;
   onCommit: (p: AIProposal) => Promise<void>;
 }) {
+  const [liveActive, setLiveActive] = useState(false),
+    [completed, setCompleted] = useState(0);
   const [question, setQuestion] = useState(""),
     [answer, setAnswer] = useState(""),
     [proposal, setProposal] = useState<AIProposal | null>(null),
@@ -66,8 +70,9 @@ export default function Assistant({
       await onCommit(proposal);
       if (alive.current) {
         setProposal(null);
+        setCompleted((n) => n + 1);
         setAnswer("Uitgevoerd. Je overzicht is bijgewerkt.");
-        if (readAloud && "speechSynthesis" in window) {
+        if (readAloud && !liveActive && "speechSynthesis" in window) {
           const u = new SpeechSynthesisUtterance(
             "Uitgevoerd. Je overzicht is bijgewerkt.",
           );
@@ -83,17 +88,8 @@ export default function Assistant({
     }
   }
   async function ask(text = question) {
-    if (!supabase || !text.trim() || busy) return;
-    const confirmation = text
-      .toLowerCase()
-      .replace(/[.,!?]/g, "")
-      .trim();
-    if (
-      proposal &&
-      ((proposal.action === "delete" && confirmation === "ja verwijderen") ||
-        (proposal.action !== "delete" &&
-          ["ja opslaan", "ja uitvoeren"].includes(confirmation)))
-    ) {
+    if (!supabase || !text.trim() || busy || liveActive) return;
+    if (proposal && confirmsProposal(text, proposal.action)) {
       await commit();
       return;
     }
@@ -119,7 +115,7 @@ export default function Assistant({
       setAnswer(message);
       if (r.data?.proposal)
         setProposal(aiProposalSchema.parse(r.data.proposal));
-      if (readAloud && "speechSynthesis" in window) {
+      if (readAloud && !liveActive && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(message);
         utterance.lang = "nl-NL";
@@ -243,6 +239,17 @@ export default function Assistant({
         </p>
       ) : (
         <>
+          <RealtimeConversation
+            disabled={busy || recording}
+            pendingProposal={!!proposal}
+            onProposal={setProposal}
+            onActiveChange={setLiveActive}
+            completed={completed}
+            onTranscript={(text) => {
+              if (proposal && confirmsProposal(text, proposal.action))
+                void commit();
+            }}
+          />
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -256,14 +263,14 @@ export default function Assistant({
                 maxLength={2000}
                 required
                 placeholder="Waar kan ik vandaag het beste mee beginnen?"
-                disabled={busy || recording}
+                disabled={busy || recording || liveActive}
                 onChange={(e) => setQuestion(e.target.value)}
               />
             </label>
             <div className="assistant-actions">
               <button
                 className="primary"
-                disabled={busy || recording || !question.trim()}
+                disabled={busy || recording || liveActive || !question.trim()}
               >
                 Vraag stellen
               </button>
@@ -271,7 +278,7 @@ export default function Assistant({
                 <button
                   type="button"
                   className="secondary"
-                  disabled={busy}
+                  disabled={busy || liveActive}
                   onClick={() => void record()}
                 >
                   {recording ? "Stop opname" : "Vraag inspreken"}
@@ -334,6 +341,8 @@ export default function Assistant({
               {proposal.action === "create" && (
                 <p>
                   {proposal.item.description}
+                  {proposal.item.repeat_kind !== "none" &&
+                    ` · ${{ daily: "Dagelijks", weekly: "Wekelijks", monthly: "Maandelijks" }[proposal.item.repeat_kind]}`}
                   {proposal.item.due_at &&
                     ` · ${new Date(proposal.item.due_at).toLocaleString("nl-NL")}`}
                 </p>
@@ -343,7 +352,7 @@ export default function Assistant({
                   {Object.entries(proposal.patch)
                     .map(
                       ([key, value]) =>
-                        `${key === "title" ? "Titel" : key === "description" ? "Notitie" : "Datum"}: ${key === "due_at" && value ? new Date(value).toLocaleString("nl-NL") : value || "geen"}`,
+                        `${key === "title" ? "Titel" : key === "description" ? "Notitie" : key === "repeat_kind" ? "Herhalen" : "Datum"}: ${key === "due_at" && value ? new Date(value).toLocaleString("nl-NL") : value || "geen"}`,
                     )
                     .join(" · ")}
                 </p>

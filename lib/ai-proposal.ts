@@ -4,6 +4,7 @@ const item = z.object({
   kind: z.enum(["task", "event", "reminder"]),
   description: z.string().max(5000),
   due_at: z.string(),
+  repeat_kind: z.enum(["none", "daily", "weekly", "monthly"]).default("none"),
 });
 const target = {
   id: z.string().uuid(),
@@ -20,6 +21,7 @@ export const aiProposalSchema = z.discriminatedUnion("action", [
         title: z.string().trim().min(1).max(200).optional(),
         description: z.string().max(5000).optional(),
         due_at: z.string().optional(),
+        repeat_kind: z.enum(["none", "daily", "weekly", "monthly"]).optional(),
       })
       .strict(),
   }),

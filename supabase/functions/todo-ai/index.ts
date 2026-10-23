@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.118.0";
+import { realtimeRequest } from "./realtime.ts";
 import { answerQuestion } from "./chat.ts";
 const origins = [
   "https://todo.zsj4j2s4df.workers.dev",
@@ -39,7 +40,7 @@ Deno.serve(async (req: Request) => {
   const key = Deno.env.get("OPENAI_API_KEY");
   try {
     const isAudio = req.headers.get("x-todo-action") === "transcribe";
-    const max = isAudio ? 2 * 1024 * 1024 : 16000;
+    const max = isAudio ? 2 * 1024 * 1024 : 48000;
     const reader = req.body?.getReader();
     const chunks: Uint8Array[] = [];
     let length = 0;
@@ -74,6 +75,37 @@ Deno.serve(async (req: Request) => {
         { error: "De assistent is nog niet geactiveerd door de beheerder." },
         503,
       );
+    if (
+      ["realtime_start", "realtime_tool", "realtime_stop"].includes(
+        body?.action,
+      )
+    ) {
+      const admin = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+        { auth: { persistSession: false, autoRefreshToken: false } },
+      );
+      try {
+        return json(
+          await realtimeRequest(
+            client,
+            admin,
+            user.data.user.id,
+            key,
+            body,
+            Deno.env.get("OPENAI_REALTIME_MODEL") || "gpt-realtime-2.1",
+          ),
+        );
+      } catch (e) {
+        return json(
+          {
+            error:
+              e instanceof Error ? e.message : "Livegesprek niet beschikbaar",
+          },
+          400,
+        );
+      }
+    }
     if (
       !isAudio &&
       (body?.action !== "chat" ||
