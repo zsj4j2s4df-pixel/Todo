@@ -15,3 +15,5 @@ Use this skill for every icon or illustration change in Todo.
 - Recolor through CSS `currentColor`; simple rotations of the same arrow/plus are permitted. Preserve accessible text labels; decorative icons are aria-hidden.
 - Use paper #efe9dd, card #f8f4ec, ink #3a302a, accent #755a43, soft accent #e3d6c6, light text #fffaf2. Validate button text contrast and keyboard focus.
 - Before shipping, run the icon source check, typecheck and production build. Inspect desktop and narrow mobile screenshots. Do not merge main without user permission.
+
+- Recipient symbols use the coordinated Canva source [MAHZIu0YWMs](https://www.canva.com/M/MAHZIu0YWMs): `person-me`, `person-partner`, `people-together`. Use accessible text to identify the actual recipient; never infer assignment from the creator. Preserve their recorded raster source and hash in provenance.json.

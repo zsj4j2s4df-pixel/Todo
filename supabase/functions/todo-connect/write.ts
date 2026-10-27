@@ -264,6 +264,20 @@ function icalTime(iso: string, date: string | null, allDay: boolean) {
     null,
   );
 }
+export function recurrenceKey(value: string, timezone = "UTC") {
+  if (!value) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return "date:" + value;
+  if (/Z$|[+-]\d\d:\d\d$/.test(value))
+    return Temporal.Instant.from(value).toString();
+  const zone =
+    timezone.match(
+      /(?:Africa|America|Antarctica|Asia|Atlantic|Australia|Europe|Indian|Pacific)\/.+$/,
+    )?.[0] || timezone;
+  return Temporal.PlainDateTime.from(value)
+    .toZonedDateTime(zone, { disambiguation: "later" })
+    .toInstant()
+    .toString();
+}
 function setIcalFields(event: ICAL.Component, i: EventInput) {
   for (const field of ["dtstart", "dtend"])
     event.getFirstProperty(field)?.removeParameter("tzid");
@@ -567,6 +581,23 @@ export async function changeSourceEvent(
       String(x.getFirstPropertyValue("recurrence-id") || "") ===
         String(resource.recurrence_id || ""),
   );
+  if (!event && resource.recurrence_id) {
+    const zone = String(
+      master?.getFirstProperty("dtstart")?.getParameter("tzid") || "UTC",
+    );
+    const expected = recurrenceKey(String(resource.recurrence_id), zone);
+    event = events.find(
+      (x) =>
+        String(x.getFirstPropertyValue("uid")) === resource.uid &&
+        x.hasProperty("recurrence-id") &&
+        recurrenceKey(
+          String(x.getFirstPropertyValue("recurrence-id")),
+          String(
+            x.getFirstProperty("recurrence-id")?.getParameter("tzid") || zone,
+          ),
+        ) === expected,
+    );
+  }
   if (!event && resource.recurrence_id && master) {
     event = new ICAL.Component(JSON.parse(JSON.stringify(master.toJSON())));
     for (const field of ["rrule", "rdate", "exdate", "duration"])

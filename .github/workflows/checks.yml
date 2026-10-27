@@ -18,6 +18,7 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npm run typecheck
+      - run: npm exec --yes --package=deno@2.5.7 -- deno test --node-modules-dir=none --allow-env supabase/functions/todo-connect/protocol_test.ts supabase/functions/todo-mcp/protocol_test.ts supabase/functions/push-dispatch/protocol_test.ts
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - uses: actions/upload-artifact@v4

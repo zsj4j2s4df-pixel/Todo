@@ -40,3 +40,13 @@ Nog geen providerautorisaties of SMTP-instellingen in deze taak opgegeven. Werk 
 - Gebruiker heeft in deze sessie expliciet toestemming gegeven voor publicatie én samenvoegen naar main. Werk blijft via PR #2 lopen.
 - Zie CONNECTIONS.md voor activering, huidige provider-/exportgrenzen en native compatibiliteit. SMTP-configuratie is niet uitleesbaar via de beschikbare connector; verzending niet als gecontroleerd presenteren.
 - Volgende handeling: vijf geteste migraties toepassen, vier Edge Functions publiceren, Cloudflare-assets/Worker publiceren, live metadata/auth-afwijzing controleren en PR samenvoegen na geslaagde checks.
+
+## Publicatie voltooid, 27 oktober 2026
+
+- Cloudflare deployment `f8e39d298b4d4a6ca6a51574300f2536`; frontendbuild uit `18a4962`, ontvangerassets uit de vastgelegde Canva-bron. App https://todo.zsj4j2s4df.workers.dev/ en MCP https://todo.zsj4j2s4df.workers.dev/mcp zijn publiek bereikbaar.
+- Alle vijf nieuwe migraties toegepast; negentien in totaal. Lokale versies zijn gelijk aan de live migratiehistorie.
+- Actief: todo-connect v2, todo-mcp v2, todo-ai v3 en push-dispatch v6. De extra CalDAV-regressietest voorkomt dubbele uitzonderingen bij UTC versus lokale recurrence-ID's; daarmee slagen negentien Deno-protocoltests.
+- De veertien accountbrowsertests slagen ook op de publieke URL met onderschepte synthetische API's. Homepage is bytegelijk aan de gecontroleerde productiebuild. Ontvangericoon/discovery leveren 200; MCP, provider-, AI- en dispatchendpoint geven zonder aanmelding 401.
+- `live_workspace_privacy.sql` slaagt op echte Supabase: accountisolatie, notitieconversie/idempotentie, soft delete/privéherstel, service-only helpers, daadwerkelijke Vault-opslag, snapshot/cache en opruimen bij ontkoppelen. Synthetische accounts/data volledig teruggedraaid, geen externe verzoeken.
+- Supabase-advisor: geen nieuwe tabel-/RLS-bevindingen; bestaande waarschuwing gelekte-wachtwoordbescherming blijft gedocumenteerd. Er zijn geen persoonlijke providerverbindingen door de tests aangemaakt.
+- Samenvoegen gebeurt via de expliciet goedgekeurde PR #2; de uiteindelijke merge-SHA en status zijn te volgen in GitHub. Persoonlijke aanmelding, providerregistratie/verificatie en echte mail-/spraak-/pushproeven blijven activeringsgrenzen, geen gesimuleerde succesclaims.

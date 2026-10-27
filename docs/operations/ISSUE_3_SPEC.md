@@ -359,4 +359,3 @@ Expliciete gebruikerswens: zodra later eventueel een native iPhone/iPad-app voor
 - Ontwerp tijdens native ontwikkeling de vereiste mobiele OAuth-callbacks/deeplinks en sessieopslag volgens de actuele platformregels; hergebruik geen onveilige gedeelde tokens. Wijzig bestaande PWA-callbacks niet zodanig dat de webapp niet meer werkt.
 - Acceptatie bij een latere native oplevering: hetzelfde account werkt via PWA en native; ChatGPT én Claude blijven verbonden of kunnen aantoonbaar veilig opnieuw verbinden; agenda-/mailsync blijft correct; partneraccounts blijven gescheiden; intrekking van rechten werkt in alle clients.
 - Deze compatibiliteitseis geldt voor een eventueel later native traject. Dit issue maakt native apps of storepublicatie op zichzelf niet verplicht en claimt niet dat ze al bestaan.
-

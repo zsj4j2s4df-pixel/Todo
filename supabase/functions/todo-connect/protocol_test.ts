@@ -13,7 +13,12 @@ import {
   gmailMessage,
   configuration,
 } from "./providers.ts";
-import { changeSourceEvent, eventInput, createSourceEvent } from "./write.ts";
+import {
+  recurrenceKey,
+  changeSourceEvent,
+  eventInput,
+  createSourceEvent,
+} from "./write.ts";
 import { connectorAction, performSync, performWrite } from "./service.ts";
 const assert = (value: unknown, message = "Assertion failed") => {
   if (!value) throw Error(message);
@@ -438,5 +443,22 @@ Deno.test(
       },
     );
     assert(calls === 2 && recovered.events[0].event_id === "three");
+  },
+);
+
+Deno.test(
+  "CalDAV UTC and local recurrence IDs match without creating duplicate exceptions",
+  () => {
+    assert(
+      recurrenceKey("2027-03-28T09:00:00", "Europe/Amsterdam") ===
+        recurrenceKey("2027-03-28T07:00:00Z"),
+    );
+    assert(
+      recurrenceKey(
+        "2027-10-31T09:00:00",
+        "/freeassociation.sourceforge.net/Tzfile/Europe/Amsterdam",
+      ) === recurrenceKey("2027-10-31T08:00:00Z"),
+    );
+    assert(recurrenceKey("2027-03-28") === "date:2027-03-28");
   },
 );

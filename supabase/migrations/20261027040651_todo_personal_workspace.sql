@@ -112,7 +112,7 @@ begin
  select * into n from public.inbox_notes where id=note_id for update;
  if auth.uid() is null or n.id is null or n.user_id<>auth.uid() or n.state='trash' then raise exception 'Geen toegang';end if;
  if n.converted_item_id is not null then return n.converted_item_id;end if;
- new_item=new_item||jsonb_build_object('due_at',nullif(new_item->>'due_at',''),'end_at',nullif(new_item->>'end_at',''),'start_date',nullif(new_item->>'start_date',''),'end_date',nullif(new_item->>'end_date',''),'schedule_until',nullif(new_item->>'schedule_until','')); 
+ new_item=new_item||jsonb_build_object('due_at',nullif(new_item->>'due_at',''),'end_at',nullif(new_item->>'end_at',''),'start_date',nullif(new_item->>'start_date',''),'end_date',nullif(new_item->>'end_date',''),'schedule_until',nullif(new_item->>'schedule_until',''));
  v=jsonb_populate_record(null::public.items,new_item);
  made=coalesce(v.id,gen_random_uuid());
  insert into public.items(id,owner_id,household_id,kind,title,description,status,priority,category,due_at,end_at,timezone,location,visibility,assignees,selected_users,checklist)

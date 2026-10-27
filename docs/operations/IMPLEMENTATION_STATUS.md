@@ -1,50 +1,37 @@
-# Oplevering 22 oktober 2026
+# Oplevering 27 oktober 2026
 
-App: https://todo.zsj4j2s4df.workers.dev/ — Cloudflare Worker met Static Assets en beveiligde Supabase Auth/PostgreSQL. Werkbranch `codex/todo-working-mvp`, PR #2; main wordt niet automatisch gewijzigd of gemerged.
+App: https://todo.zsj4j2s4df.workers.dev/
+Connector: https://todo.zsj4j2s4df.workers.dev/mcp
 
-## Wat werkt
+De bestaande taken, privacy, agenda, herinneringen, weerbriefing, push en tekst-/spraak-AI zijn uitgebreid met de bouwopdracht uit issue #3. De gebruiker heeft toestemming gegeven voor publicatie en samenvoegen via PR #2. De actuele publicatie-/mergecontrole staat in ISSUE_3_PROGRESS.md.
 
-Taken, afspraken, herinneringen, privé/gedeeld/geselecteerd, nul/meerdere toewijzingen, afgeschermde huishoudens, in-app meldingen en voorkeuren, maandkalender en dagfilters, agenda-export met bevestiging, navigatielinks, snelle conceptinvoer vanuit tekst/URL/deelblad, lokale back-up/restore en een inlogpoort voor de cloudmodus. Alleen eigenaren wijzigen details; toegewezen personen kunnen afronden/heropenen via een beperkte RPC. Andere gebruikers ophalen gebeurt via Vernieuwen.
+## Nieuw gebouwd en gepubliceerd
 
-Nieuw: licht papier met koffiebruine accenten; Canva-appicoon en negen bijpassende UI-symbolen via één component. De repository bevat een verplichte icoonstijlskill en bronverantwoording. De beschikbaar gestelde Canva-bronnen zijn 200px-rasterpreviews; appformaten zijn daarvan technisch vergroot, geen vector-/hoogresolutieclaim. Een grotere Canva-export blijft wenselijk voor toekomstig groot drukwerk.
+- Persoonlijke inbox per account: getypte/ingesproken notities, zelf geselecteerde Gmail-berichten en expliciet toegewezen taken. Delen verleent geen impliciete toegang tot de inbox of bronaccounts van een partner.
+- Dagelijkse terugkeer van onverwerkte notities, subtiele wekelijkse opruimronde, boodschappenlijsten met gedeelde rechten, lijstsjablonen, uitstellen naar gekozen datum en Canva-ontvangericoontjes.
+- Verwijderbevestiging, tijdelijk Ongedaan maken, prullenbak en privéherstel. Notes kunnen definitief uit de prullenbak worden verwijderd. Geannuleerde reeksinstanties zijn herstelbaar vanuit de reeks.
+- Eén agenda-editor via het kalenderplusje met geselecteerde dag. Verjaardag/vakantie, hele dagen met exclusieve einddatum, zes herhaalfrequenties, reeksen/uitzonderingen en vrije blokken in de bestaande agenda. Vrij gemarkeerde bronafspraken en verjaardagen blokkeren geen tijd.
+- iCloud/CalDAV, persoonlijk Outlook/Graph, Google Calendar en Gmail: echte provideradapters, OAuth/PKCE waar passend, account-/agendaselectie, versleutelde Vault-credentials, status, herautorisatie en ontkoppelen. Schrijven per agenda na expliciete opt-in en bronversiecontrole. Google sync-token/fallback; overige providers volledige snapshots.
+- Remote MCP met eigen accounttoestemming, scopes, tokenrotatie, intrekking en concrete wijzigingsvoorstellen. Alleen een ingelogde gebruiker kan een voorstel uitvoeren. Het model krijgt geen Supabase-JWT, service key of providercredentials.
+- Bestaande AI kan nu ook persoonlijke notities zoeken en een notitie voorstellen. Getypeerde en gesproken bevestiging blijven verplicht. Dezelfde accountrechten gelden voor app, AI, MCP en providerjobs.
+- Instellingenstatus voor koppelingen/apparaat; bevestigingsmail opnieuw aanvragen en terugkeerlinks voor registratie/herstel. JSON-back-up v2 voor items, notities en sjablonen; lokaal privéherstel en compatibiliteit met oudere item-back-ups.
 
-Nieuw: checklists van maximaal 50 stappen, met dezelfde itemrechten en databasevalidatie. Een dagbrief toont maximaal drie volgende stappen en signaleert echte agenda-overlap op basis van zichtbare gegevens. Deze logica gebruikt geen AI of externe accountgegevens.
+## Publicatie en verificatie
 
-Nieuw: webpush na expliciete opt-in op ieder apparaat, algemene tekst zonder privétitels, meldingen bij toewijzing/afronding, vervallen herinneringen en een optioneel ochtendseintje. Supabase Vault bewaart de serversleutels; service-role blijft uitsluitend server-side. De dispatcher controleert rechten en voorkeuren opnieuw, dedupliceert en herprobeert begrensd. Zie PUSH.md voor gedrag en beheer. Alle tien migraties zijn toegepast en hun bestandsversies zijn afgestemd op de live historie.
+Broncode: `18a4962`; Cloudflare deployment `f8e39d298b4d4a6ca6a51574300f2536`. Negentien migraties zijn toegepast. Actieve Edge Functions: `todo-connect` v2, `todo-mcp` v2, `todo-ai` v3 en `push-dispatch` v6. De migratiebestandsversies zijn gelijkgetrokken met de live historie.
 
-## Verificatie
+54 unit-/PostgreSQL-tests, 19 Deno-protocoltests, 28 lokale browsertests en 14 accountbrowsertests slagen. De 14 accounttests slagen ook tegen de publieke site met synthetische, onderschepte backend-/modelaanroepen. Typecheck, productiebuild en Canva-provenancecontrole slagen. Mobiele/desktopagenda's zijn visueel gecontroleerd. npm audit productie: nul kwetsbaarheden.
 
-Unit- en PostgreSQL/PGlite-tests dekken privacy, geselecteerde shares, toewijzingen, intrekken, TRUNCATE-bescherming, uitnodigingen, in-app meldingen, pushrechten, uitgeschakelde herinneringen, endpointvalidatie, deduplicatie, leases, ingetrokken toegang en verlopen abonnementen. De Supabase-only Cron/net-migratie is live gecontroleerd; de outbox wordt lokaal volledig uitgevoerd. Deno controleert de Edge-code en maakt in een protocoltest een echte VAPID/versleutelde request zonder verzending.
+De aanvullende live transactietest `supabase/tests/live_workspace_privacy.sql` slaagt met tijdelijke fixtures en volledige rollback, inclusief echte Vault-opslag, notitieconversie/herstel en providerisolatie. Homepage-buildhash, ontvangericoon, OAuth/MCP-discovery en 401 zonder aanmelding zijn publiek gecontroleerd.
 
-Live pushbeheer: Cron actief iedere minuut, drie Vault-secrets aanwezig, gewone gebruikers hebben geen dispatcherrechten. Endpoint zonder geheim geeft 401; met geldige beheersleutel 200 en nul jobs. Er zijn tijdens verificatie geen echte pushberichten of e-mails verstuurd. De oorspronkelijke live privacytest gebruikte tijdelijke fixtures die worden teruggedraaid.
+Live databasecontrole bevestigt RLS op de nieuwe tabellen en service-only toegang tot MCP-/providerhelpers. De Supabase-securityadviseur heeft geen nieuwe tabel-/RLS-bevindingen. De al bestaande Auth-waarschuwing blijft: [bescherming tegen gelekte wachtwoorden staat uit](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection). Geen betaald plan of persoonlijke mailhosting is gewijzigd.
 
-Auth-callbacks wijzen nu naar de gepubliceerde URL. De beveiligingsadviseur heeft na de nieuwe migraties geen tabel-/RLS-bevindingen; er blijft een Auth-waarschuwing dat [bescherming tegen gelekte wachtwoorden](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection) uitstaat. Dit is een dashboardinstelling; er is geen betaald plan of extra dienst geactiveerd. Performance heeft uitsluitend informatieve ongebruikte-indexmeldingen; relevante indexen blijven behouden.
+## Nog persoonlijk activeren of verifiëren
 
-## Open
+Google-/Microsoft-OAuth-appregistraties en eventuele providerverificatie, eigen providerautorisatie/agenda's, registratie-/herstelmail en echte spraak-/WebRTC-/pushbezorging op eigen apparaten. SMTP/senderconfiguratie is niet uitleesbaar via de beschikbare Supabase-tools. Er is geen echte mail, uitnodiging of betaalde AI-inferentie tijdens de automatische tests verstuurd.
 
-- Echte apparaatverificatie van PWA-installatie en push op iPhone/iPad/Android/Windows, inclusief vergrendeling, Focus en afmelden. Serveracceptatie is geen bewijs van fysieke bezorging.
-- Persoonlijke registratie, bevestigingsmail, herstelmail en een tweepersoons-loginflow; geen testmails naar echte personen sturen.
-- Volledige terugkerende agenda-afspraken, huisgenotenbeheer, prullenbak, auditlog en volledige offline/realtime-synchronisatie.
-- Mail-/agenda-OAuth, WhatsApp Business, remote MCP en een externe connector-API. Zie INTEGRATIONS.md voor prioriteit, scope en acceptatie. De bestaande ICS-export en conceptinvoer zijn geen automatische providerkoppeling.
+MCP-serverprotocol en accountisolatie zijn getest; persoonlijke ChatGPT- en Claude-aanmeldingen zijn nog niet uitgevoerd. Een bestaande OpenAI-API-sleutel activeert deze custom connectors niet automatisch. Zie [aansluitinstructies en begrenzingen](CONNECTIONS.md).
 
-Er staan geen secrets, service-rolekeys of gebruikersgegevens in Git. Externe berichten blijven onbetrouwbare conceptinvoer; de app slaat ze niet automatisch op. Google Fonts gebruikt externe downloads met lokale fallbacks. Clouddata wordt niet door de service worker gecachet.
+De sync toont zeven dagen terug tot dertig dagen vooruit, maximaal duizend bronafspraken per verbinding. Hele externe reeksen wijzigen gebeurt in de bronagenda; Todo bewerkt één moment. Notities worden eerst naar een privé-Todo-item geconverteerd. Voor afwijkende herhalingssemantiek wordt geen stilzwijgende vertaling naar Outlook gedaan.
 
-## Aanvulling: kronkelige huisstijl, weer en OpenAI
-
-Alle negen UI-iconen, het appicoon en de penkaders zijn opnieuw met Canva gemaakt met duidelijk kronkelige lijnen zonder liniaal. AGENTS.md en de stijlskill gelden ook voor kaders en scheidingslijnen. De bronbestanden, media-ID’s, hashes en technische omzetting staan in Git. Native browserbediening en zichtbare toetsenbordfocus blijven toegankelijk.
-
-Briefingvoorkeuren zijn persistent per account: eigen tijd, inhoud, weerplaats en twee algemene weermomenten. Open-Meteo levert dagtemperaturen, regenkans en wind. Push kan de gekozen verwachtingen meesturen; geen privétitels. Er is geen automatische weerplaats per afspraak gekoppeld.
-
-OpenAI-assistent en transcriptie zijn als Edge Function gepubliceerd. Typen, inspreken, apparaatstem en bevestigde beheeracties zijn gebouwd. De AI zoekt via RLS in alle zichtbare iteminhoud en maakt bewerkbare voorstellen. De bestaande sleutel is door de gebruiker als geactiveerd gemeld; er is geen sleutel uitgelezen of gepubliceerd en geen betaald modelverzoek door de tests gedaan. Zie AI.md voor de precieze testgrens en de nog niet gebouwde OpenAI Realtime-modus.
-
-Laatste lokale controle: 29 unit-/PostgreSQL-tests en 18 lokale browsertests slagen. Cloudcontroles testen aanvullend een AI-voorstel met volledig onderschepte synthetische API-fixtures; ze testen geen echte modelrespons of microfoon.
-
-Publicatieverificatie: broncommit `d5ee65e` staat live met Cloudflare deployment `e6db5b1b23d54a01a20c1ff117485264`. De zes cloudbrowsertests slagen ook tegen de publieke URL op desktop en mobiel. Microfoontoestemming voor de eigen oorsprong en de twee weer-API-origins staan in de live securityheaders. De extra Deno-Web-Push-protocoltest slaagt zonder verzending. PR #2 is bijgewerkt; main is niet gemerged.
-
-## Vervolg 23 oktober 2026
-
-Gebouwd: kort OpenAI Realtime-gesprek met RLS-toolbrug, gesproken bevestiging, stop-/uitlog-/navigatie-opruiming en server-cleanup; herhaling van taken/herinneringen na afronden met behoud van lokaal tijdanker; bevestigde, gededupliceerde privé-import van losse .ics-afspraken. Zie LIVE_AND_ROUTINES.md. De eerdere opmerking dat doorlopend Realtime nog niet gebouwd was, is hiermee vervallen; de echte provider-/apparaatproef blijft open.
-
-Nog te regelen buiten de beschikbare sessie: persoonlijke microfoon/WebRTC/push-tests, providerkeuze en OAuth/CalDAV-gegevens voor automatische mail-/agendasynchronisatie, Meta-inrichting voor WhatsApp Business en OAuth-inrichting voor publieke MCP-clientkoppelingen. Er is geen extra provideraccount of betaald plan geactiveerd en main blijft ongemerged.
-
-Publicatieverificatie 23 oktober: broncommit `2e9d6b1` staat live met Cloudflare deployment `23288c785eda4f7da1a788ff1e737bba`. Alle veertien databasemigraties zijn live toegepast; `todo-ai` versie 2 en `push-dispatch` versie 4 zijn actief. Typecheck, productiebuild, 41 unit-/PostgreSQL-tests, 22 lokale browsertests, 10 accountbrowsertests en de Deno-Web-Push-protocoltest slagen. De tien accountbrowsertests slagen ook tegen de publieke URL met onderschepte synthetische backend-/modelverzoeken. Homepage, manifest, nieuwe frontendbundle en beveiligingsheaders zijn live gecontroleerd. Dit bewijst geen echte modelrespons, microfoonverbinding of fysieke pushbezorging. Productie-afhankelijkheden hebben bij npm audit geen gemelde kwetsbaarheden.
+Native apps/storepublicatie, WhatsApp Business, volledige offline cloudschrijfqueue en automatische live updates tussen apparaten vallen buiten deze oplevering. Vernieuwen haalt veranderingen van andere appgebruikers op. De MCP-/providerbackend is onafhankelijk van een latere native frontend; accounts en rechten worden hergebruikt.
