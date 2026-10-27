@@ -18,7 +18,7 @@ test("database enforces private, household, selected shares and owner writes", a
       (name) =>
         name.endsWith(".sql") &&
         !name.endsWith("_todo_push_schedule.sql") &&
-        !name.endsWith("_todo_realtime_schedule.sql"),
+        !name.endsWith("_todo_realtime_schedule.sql") && !name.endsWith("_todo_integrations_schedule.sql"),
     )
     .sort())
     await db.exec(readFileSync("supabase/migrations/" + migration, "utf8"));
@@ -187,7 +187,8 @@ test("database enforces private, household, selected shares and owner writes", a
       .rows,
   ).toHaveLength(0);
   await as(a);
-  await db.query("delete from items where id=$1", [id]);
+  await expect(db.query("delete from items where id=$1", [id])).rejects.toThrow();
+  await db.query("select public.trash_item($1,(select updated_at from public.items where id=$1))", [id]);
   expect((await db.query("select id from notifications")).rows).toHaveLength(0);
   await as(a);
   const visibleCount = (

@@ -9,6 +9,9 @@ export const iconNames = [
   "check",
   "arrow",
   "notebook",
+  "person-me",
+  "person-partner",
+  "people-together",
 ] as const;
 export default function AppIcon({
   name = "check",

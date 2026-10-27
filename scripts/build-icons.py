@@ -26,3 +26,23 @@ mask.save(root/'public/icons/pen-frame.png')
 mask.crop((12,0,mask.width-12,8)).save(root/'public/icons/pen-line.png')
 manifest={'provider':'Canva','sheet_media_id':'MAHYxDzIIZ8','app_media_id':'MAHYxC2VE74','app_source_resolution':list(app.size),'frame_media_id':'MAHYxChA8rA','frame_source_resolution':list(frame.size),'sheet_source_resolution':list(sheet.size),'icons':names,'transform':'Equal 3x3 crop; paper-to-alpha; original stroke geometry retained','sha256':hashlib.sha256((root/'assets/icon-masters/canva-sheet.png').read_bytes()).hexdigest()}
 (root/'assets/icon-masters/provenance.json').write_text(json.dumps(manifest,indent=2)+'\n')
+
+recipients=root/'assets/icon-masters/canva-recipients.png'
+if recipients.exists():
+    source=Image.open(recipients).convert('RGB')
+    for index,name in enumerate(['person-me','person-partner','people-together']):
+        part=source.crop((round(index*source.width/3),0,round((index+1)*source.width/3),source.height))
+        alpha=Image.new('RGBA',part.size)
+        alpha.putdata([(73,55,40,max(0,min(255,round((180-min(r,g,b))*255/145)))) for r,g,b in part.get_flattened_data()])
+        bounds=alpha.getbbox()
+        if not bounds: raise RuntimeError('Empty recipient icon')
+        crop=alpha.crop(bounds)
+        side=max(crop.size)+12
+        canvas=Image.new('RGBA',(side,side))
+        canvas.paste(crop,((side-crop.width)//2,(side-crop.height)//2))
+        canvas.save(root/f'public/icons/ui/{name}.png')
+    manifest['recipient_media_id']='MAHZIu0YWMs'
+    manifest['recipient_source_resolution']=list(source.size)
+    manifest['recipient_source_sha256']=hashlib.sha256(recipients.read_bytes()).hexdigest()
+    manifest['recipient_icons']=['person-me','person-partner','people-together']
+    (root/'assets/icon-masters/provenance.json').write_text(json.dumps(manifest,indent=2)+'\n')

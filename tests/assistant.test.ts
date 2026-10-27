@@ -6,6 +6,29 @@ import {
 } from "../supabase/functions/todo-ai/tool-policy";
 import { forecastMoments, fetchWeather } from "../lib/weather";
 import { normalizeBrief } from "../lib/brief-preferences";
+import { runTool } from "../supabase/functions/todo-ai/chat";
+test("AI searches notes through caller RLS and only prepares spoken note writes", async () => {
+  const client = {
+    rpc: async (name: string, args: any) => {
+      expect(name).toBe("ai_search_notes");
+      expect(args.query_text).toBe("100%_");
+      return { data: { total: 31, notes: [{ body: "Privé" }] } };
+    },
+    from: () => {
+      throw Error("No writes allowed");
+    },
+  };
+  const read = await runTool(client, "user", "search_notes", {
+    q: "100%_",
+    offset: 0,
+  });
+  expect((read.value as any).next_offset).toBe(30);
+  const result = await runTool(client, "user", "prepare_note", {
+    body: " Gedachte ",
+  });
+  expect(result.proposal).toEqual({ action: "note_create", body: "Gedachte" });
+  expect((result.value as any).saved).toBe(false);
+});
 test("weather times use complete valid hourly data and never convert missing values to zero", () => {
   const data = {
     hourly: {

@@ -7,10 +7,12 @@ export default function MonthCalendar({
   items,
   selected,
   onSelect,
+  onAdd,
 }: {
   items: Item[];
   selected: string | null;
   onSelect: (date: string | null) => void;
+  onAdd: () => void;
 }) {
   const [month, setMonth] = useState(() => new Date());
   const label = month.toLocaleDateString("nl-NL", {
@@ -23,6 +25,9 @@ export default function MonthCalendar({
       <div className="month-header">
         <h2 aria-live="polite">{label}</h2>
         <div>
+          <button className="secondary" aria-label="Afspraak toevoegen" onClick={onAdd}>
+            <Icon name="plus" />
+          </button>
           <button
             className="secondary"
             aria-label="Vorige maand"

@@ -27,7 +27,7 @@ test("day brief limits steps, prioritizes and detects actual overlaps, not adjac
   const base = blankItem("device", null);
   const e = (id: string, due: string, end: string) => ({
     ...base,
-    id,
+    id: {a:"11111111-1111-4111-8111-111111111111",b:"22222222-2222-4222-8222-222222222222",c:"33333333-3333-4333-8333-333333333333"}[id]!,
     kind: "event" as const,
     title: id,
     due_at: due,
@@ -46,8 +46,8 @@ test("day brief limits steps, prioritizes and detects actual overlaps, not adjac
     ],
     now,
   );
-  expect(brief.next.map((i) => i.id)).toEqual(["a", "b", "c"]);
-  expect(brief.clashes).toEqual([["a", "b"]]);
+  expect(brief.next.map((i) => i.title)).toEqual(["a", "b", "c"]);
+  expect(brief.clashes).toEqual([[events[0].id,events[1].id]]);
 });
 test("push subscriptions and outbox enforce identity, privacy, opt-in, lease and deduplication", async () => {
   const db = new PGlite();
@@ -62,7 +62,7 @@ test("push subscriptions and outbox enforce identity, privacy, opt-in, lease and
       (n) =>
         n.endsWith(".sql") &&
         !n.endsWith("_todo_push_schedule.sql") &&
-        !n.endsWith("_todo_realtime_schedule.sql"),
+        !n.endsWith("_todo_realtime_schedule.sql") && !n.endsWith("_todo_integrations_schedule.sql"),
     )
     .sort())
     await db.exec(readFileSync("supabase/migrations/" + name, "utf8"));

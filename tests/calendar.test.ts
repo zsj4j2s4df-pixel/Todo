@@ -1,6 +1,34 @@
 import { expect, it } from "vitest";
 import { calendarExport } from "../lib/calendar";
 import { blankItem } from "../lib/model";
+import ICAL from "ical.js";
+it("exports wall-clock series across DST and preserves month-end clamping", () => {
+  const text = calendarExport([
+    {
+      ...blankItem("device", null, "event"),
+      title: "Maandultimo",
+      timezone: "Europe/Amsterdam",
+      due_at: "2027-01-31T08:00:00Z",
+      schedule_kind: "monthly",
+    },
+  ]);
+  expect(text).toContain("DTSTART;TZID=Europe/Amsterdam:20270131T090000");
+  expect(text.replaceAll("\r\n ", "")).toContain(
+    "BYMONTHDAY=28,29,30,31;BYSETPOS=-1",
+  );
+  const calendar = new ICAL.Component(ICAL.parse(text)),
+    component = calendar.getFirstSubcomponent("vtimezone")!;
+  const zone = new ICAL.Timezone({ component, tzid: "Europe/Amsterdam" });
+  for (const [date, expected] of [
+    ["2027-03-27T09:00:00", "2027-03-27T08:00:00.000Z"],
+    ["2027-03-28T09:00:00", "2027-03-28T07:00:00.000Z"],
+    ["2027-10-31T09:00:00", "2027-10-31T08:00:00.000Z"],
+  ]) {
+    const time = ICAL.Time.fromString(date, null);
+    time.zone = zone;
+    expect(time.toJSDate().toISOString()).toBe(expected);
+  }
+});
 it("exports appointments in UTC, keeping stable identifiers and excluding tasks", () => {
   const event = {
     ...blankItem("device", null, "event"),

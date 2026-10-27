@@ -141,7 +141,7 @@ test("real database limits session owners, concurrency, tools, cleanup and daily
       (n) =>
         n.endsWith(".sql") &&
         !n.endsWith("_todo_push_schedule.sql") &&
-        !n.endsWith("_todo_realtime_schedule.sql"),
+        !n.endsWith("_todo_realtime_schedule.sql") && !n.endsWith("_todo_integrations_schedule.sql"),
     )
     .sort())
     await db.exec(readFileSync("supabase/migrations/" + file, "utf8"));

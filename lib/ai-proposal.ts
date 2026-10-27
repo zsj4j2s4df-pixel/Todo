@@ -4,7 +4,17 @@ const item = z.object({
   kind: z.enum(["task", "event", "reminder"]),
   description: z.string().max(5000),
   due_at: z.string(),
-  repeat_kind: z.enum(["none", "daily", "weekly", "monthly"]).default("none"),
+  repeat_kind: z
+    .enum([
+      "none",
+      "hourly",
+      "daily",
+      "weekly",
+      "fortnightly",
+      "monthly",
+      "yearly",
+    ])
+    .default("none"),
 });
 const target = {
   id: z.string().uuid(),
@@ -14,6 +24,10 @@ const target = {
 export const aiProposalSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("create"), item }),
   z.object({
+    action: z.literal("note_create"),
+    body: z.string().trim().min(1).max(5000),
+  }),
+  z.object({
     action: z.literal("update"),
     ...target,
     patch: z
@@ -21,7 +35,17 @@ export const aiProposalSchema = z.discriminatedUnion("action", [
         title: z.string().trim().min(1).max(200).optional(),
         description: z.string().max(5000).optional(),
         due_at: z.string().optional(),
-        repeat_kind: z.enum(["none", "daily", "weekly", "monthly"]).optional(),
+        repeat_kind: z
+          .enum([
+            "none",
+            "hourly",
+            "daily",
+            "weekly",
+            "fortnightly",
+            "monthly",
+            "yearly",
+          ])
+          .optional(),
       })
       .strict(),
   }),

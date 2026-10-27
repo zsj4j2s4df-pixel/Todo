@@ -22,7 +22,17 @@ export function draftProposal(args: Record<string, unknown>) {
     : "task";
   const repeat_kind =
     typeof args.repeat_kind === "string" ? args.repeat_kind : "none";
-  if (!["none", "daily", "weekly", "monthly"].includes(repeat_kind))
+  if (
+    ![
+      "none",
+      "hourly",
+      "daily",
+      "weekly",
+      "fortnightly",
+      "monthly",
+      "yearly",
+    ].includes(repeat_kind)
+  )
     throw Error("Ongeldige herhaling");
   const due_at = typeof args.due_at === "string" ? args.due_at : "";
   if (
@@ -39,7 +49,14 @@ export function draftProposal(args: Record<string, unknown>) {
     title,
     kind,
     due_at,
-    repeat_kind: repeat_kind as "none" | "daily" | "weekly" | "monthly",
+    repeat_kind: repeat_kind as
+      | "none"
+      | "hourly"
+      | "daily"
+      | "weekly"
+      | "fortnightly"
+      | "monthly"
+      | "yearly",
     description:
       typeof args.description === "string"
         ? args.description.slice(0, 5000)

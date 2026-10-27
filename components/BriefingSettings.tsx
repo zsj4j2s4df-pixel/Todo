@@ -81,6 +81,8 @@ export default function BriefingSettings({
       </p>
       {(
         [
+          ["notes_enabled", "Onverwerkte notities"],
+          ["review_enabled", "Wekelijkse opruimronde"],
           ["tasks_enabled", "Taken en volgende stappen"],
           ["events_enabled", "Afspraken"],
           ["clashes_enabled", "Overlappende afspraken"],

@@ -1,10 +1,12 @@
 "use client";
 import { confirmsProposal } from "@/lib/voice-confirmation";
+import VoiceRecorder from "./VoiceRecorder";
 import RealtimeConversation from "./RealtimeConversation";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { aiProposalSchema, AIProposal } from "@/lib/ai-proposal";
 import type { Item } from "@/lib/model";
+import { frequencies } from "@/lib/schedule";
 import Icon from "./AppIcon";
 type Proposal = Pick<Item, "title" | "kind" | "description" | "due_at">;
 export default function Assistant({
@@ -27,9 +29,6 @@ export default function Assistant({
     [readAloud, setReadAloud] = useState(false),
     [autoAsk, setAutoAsk] = useState(false);
   const alive = useRef(true),
-    recorder = useRef<MediaRecorder | null>(null),
-    stream = useRef<MediaStream | null>(null),
-    timer = useRef<ReturnType<typeof setTimeout> | null>(null),
     speaking = useRef(false),
     [voiceAvailable, setVoiceAvailable] = useState(false);
   useEffect(() => {
@@ -56,9 +55,6 @@ export default function Assistant({
     return () => {
       cancel = true;
       alive.current = false;
-      if (timer.current) clearTimeout(timer.current);
-      recorder.current?.state === "recording" && recorder.current.stop();
-      stream.current?.getTracks().forEach((t) => t.stop());
       if (speaking.current) window.speechSynthesis?.cancel();
     };
   }, []);
@@ -134,89 +130,6 @@ export default function Assistant({
       if (alive.current) setBusy(false);
     }
   }
-  async function record() {
-    if (recording) {
-      recorder.current?.stop();
-      return;
-    }
-    setError("");
-    if (speaking.current) window.speechSynthesis?.cancel();
-    try {
-      const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
-      if (!alive.current) {
-        mic.getTracks().forEach((t) => t.stop());
-        return;
-      }
-      stream.current = mic;
-      const type = [
-        "audio/webm;codecs=opus",
-        "audio/mp4",
-        "audio/ogg;codecs=opus",
-      ].find((t) => MediaRecorder.isTypeSupported(t));
-      if (!type) {
-        mic.getTracks().forEach((t) => t.stop());
-        throw Error("Opnemen wordt hier niet ondersteund. Typ je vraag.");
-      }
-      const rec = new MediaRecorder(mic, {
-        mimeType: type,
-        audioBitsPerSecond: 32000,
-      });
-      recorder.current = rec;
-      const chunks: Blob[] = [];
-      let size = 0;
-      rec.ondataavailable = (e) => {
-        if (e.data.size) {
-          size += e.data.size;
-          chunks.push(e.data);
-          if (size > 1500000 && rec.state === "recording") rec.stop();
-        }
-      };
-      rec.onerror = () => {
-        mic.getTracks().forEach((t) => t.stop());
-        if (alive.current) {
-          setRecording(false);
-          setError("Opnemen is niet gelukt.");
-        }
-      };
-      rec.onstop = () => {
-        mic.getTracks().forEach((t) => t.stop());
-        if (timer.current) clearTimeout(timer.current);
-        if (!alive.current) return;
-        setRecording(false);
-        setBusy(true);
-        void supabase!.functions
-          .invoke("todo-ai", {
-            body: new Blob(chunks, { type }),
-            headers: { "Content-Type": type, "x-todo-action": "transcribe" },
-          })
-          .then(async (r) => {
-            if (!alive.current) return;
-            if (r.error || r.data?.error)
-              throw Error(
-                "Spraak omzetten is niet gelukt. Typ je vraag of probeer opnieuw.",
-              );
-            const text = typeof r.data?.text === "string" ? r.data.text : "";
-            setQuestion(text);
-            setBusy(false);
-            if (autoAsk && text.trim()) await ask(text);
-          })
-          .catch((e) => {
-            if (alive.current) setError(e.message);
-          })
-          .finally(() => {
-            if (alive.current) setBusy(false);
-          });
-      };
-      rec.start(1000);
-      setRecording(true);
-      timer.current = setTimeout(() => {
-        if (rec.state === "recording") rec.stop();
-      }, 30000);
-    } catch (e) {
-      setRecording(false);
-      setError(e instanceof Error ? e.message : "Microfoon niet beschikbaar.");
-    }
-  }
   return (
     <section className="panel assistant-panel" aria-label="Todo-assistent">
       <div className="section-heading">
@@ -275,14 +188,15 @@ export default function Assistant({
                 Vraag stellen
               </button>
               {voiceAvailable && (
-                <button
-                  type="button"
-                  className="secondary"
+                <VoiceRecorder
+                  label="Vraag inspreken"
                   disabled={busy || liveActive}
-                  onClick={() => void record()}
-                >
-                  {recording ? "Stop opname" : "Vraag inspreken"}
-                </button>
+                  onBusyChange={setRecording}
+                  onText={(text) => {
+                    setQuestion(text.slice(0, 2000));
+                    if (autoAsk && text.trim()) void ask(text.slice(0, 2000));
+                  }}
+                />
               )}
               <button
                 type="button"
@@ -314,12 +228,6 @@ export default function Assistant({
               </label>
             )}
           </form>
-          {recording && (
-            <p role="status">
-              Opname loopt, maximaal 30 seconden. Druk op Stop opname als je
-              klaar bent.
-            </p>
-          )}
           {busy && <p role="status">Even kijken…</p>}
           {answer && (
             <div className="assistant-answer" aria-live="polite">
@@ -329,20 +237,23 @@ export default function Assistant({
           {proposal && (
             <div className="draft-preview">
               <h3>
-                {proposal.action === "create"
-                  ? "Toevoegen: " + proposal.item.title
-                  : proposal.action === "delete"
-                    ? "Verwijderen: " + proposal.target_title
-                    : proposal.action === "complete"
-                      ? (proposal.done ? "Afronden: " : "Heropenen: ") +
-                        proposal.target_title
-                      : "Wijzigen: " + proposal.target_title}
+                {proposal.action === "note_create"
+                  ? "Notitie bewaren"
+                  : proposal.action === "create"
+                    ? "Toevoegen: " + proposal.item.title
+                    : proposal.action === "delete"
+                      ? "Verwijderen: " + proposal.target_title
+                      : proposal.action === "complete"
+                        ? (proposal.done ? "Afronden: " : "Heropenen: ") +
+                          proposal.target_title
+                        : "Wijzigen: " + proposal.target_title}
               </h3>
+              {proposal.action === "note_create" && <p>{proposal.body}</p>}
               {proposal.action === "create" && (
                 <p>
                   {proposal.item.description}
                   {proposal.item.repeat_kind !== "none" &&
-                    ` · ${{ daily: "Dagelijks", weekly: "Wekelijks", monthly: "Maandelijks" }[proposal.item.repeat_kind]}`}
+                    ` · ${frequencies[proposal.item.repeat_kind]}`}
                   {proposal.item.due_at &&
                     ` · ${new Date(proposal.item.due_at).toLocaleString("nl-NL")}`}
                 </p>

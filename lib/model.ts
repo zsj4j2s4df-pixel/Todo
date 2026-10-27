@@ -7,6 +7,51 @@ export const itemSchema = z
     kind: z.enum(["task", "event", "reminder"]),
     title: z.string().trim().min(1, "Vul een titel in.").max(200),
     description: z.string().max(5000),
+    deleted_at: z.string().nullable().default(null),
+    reviewed_at: z.string().nullable().default(null),
+    integration_id: z.string().uuid().nullable().default(null),
+    source_calendar_id: z.string().nullable().default(null),
+    source_event_id: z.string().nullable().default(null),
+    source_version: z.string().nullable().default(null),
+    source_hidden: z.boolean().default(false),
+    source_deleted: z.boolean().default(false),
+    list_type: z.enum(["none", "shopping"]).default("none"),
+    event_type: z
+      .enum(["standard", "birthday", "vacation"])
+      .default("standard"),
+    all_day: z.boolean().default(false),
+    busy: z.boolean().default(true),
+    start_date: z.string().default(""),
+    end_date: z.string().default(""),
+    schedule_kind: z
+      .enum([
+        "none",
+        "hourly",
+        "daily",
+        "weekly",
+        "fortnightly",
+        "monthly",
+        "yearly",
+      ])
+      .default("none"),
+    schedule_until: z.string().default(""),
+    schedule_count: z
+      .number()
+      .int()
+      .min(1)
+      .max(1000000)
+      .nullable()
+      .default(null),
+    schedule_exceptions: z
+      .array(
+        z.object({
+          index: z.number().int().min(0).max(1000000),
+          cancelled: z.boolean(),
+          patch: z.record(z.string(), z.unknown()).optional(),
+        }),
+      )
+      .max(200)
+      .default([]),
     checklist: z
       .array(
         z.object({
@@ -22,7 +67,17 @@ export const itemSchema = z
       .regex(/^[0-9a-f]{64}$/)
       .nullable()
       .default(null),
-    repeat_kind: z.enum(["none", "daily", "weekly", "monthly"]).default("none"),
+    repeat_kind: z
+      .enum([
+        "none",
+        "hourly",
+        "daily",
+        "weekly",
+        "fortnightly",
+        "monthly",
+        "yearly",
+      ])
+      .default("none"),
     repeat_anchor: z.string().nullable().default(null),
     repeat_index: z.number().int().min(0).max(1000000).default(0),
     repeat_source: z.string().uuid().nullable().default(null),
@@ -40,6 +95,30 @@ export const itemSchema = z
     updated_at: z.string(),
   })
   .superRefine((v, ctx) => {
+    try {
+      new Intl.DateTimeFormat("nl", { timeZone: v.timezone });
+    } catch {
+      ctx.addIssue({
+        code: "custom",
+        path: ["timezone"],
+        message: "Kies een geldige tijdzone.",
+      });
+    }
+    for (const key of ["start_date", "end_date", "schedule_until"] as const) {
+      const day = v[key];
+      if (
+        day &&
+        (!/^\d{4}-\d{2}-\d{2}$/.test(day) ||
+          !Number.isFinite(Date.parse(day + "T00:00:00Z")) ||
+          new Date(day + "T00:00:00Z").toISOString().slice(0, 10) !== day)
+      )
+        ctx.addIssue({
+          code: "custom",
+          path: [key],
+          message: "Kies een geldige datum.",
+        });
+    }
+
     if (v.repeat_kind !== "none") {
       if (!v.due_at || v.kind === "event")
         ctx.addIssue({
@@ -58,11 +137,39 @@ export const itemSchema = z
       }
     }
 
-    if (v.kind !== "task" && !v.due_at)
+    if (v.kind !== "task" && !v.due_at && !v.all_day)
       ctx.addIssue({
         code: "custom",
         path: ["due_at"],
         message: "Kies een datum en tijd.",
+      });
+    if (v.schedule_count && v.schedule_until)
+      ctx.addIssue({
+        code: "custom",
+        path: ["schedule_until"],
+        message: "Kies een einddatum óf een aantal herhalingen.",
+      });
+    if (v.all_day) {
+      if (
+        v.kind !== "event" ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(v.start_date) ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(v.end_date) ||
+        v.end_date <= v.start_date
+      )
+        ctx.addIssue({
+          code: "custom",
+          path: ["start_date"],
+          message: "Kies een geldige hele dag of periode.",
+        });
+    }
+    if (
+      v.schedule_kind !== "none" &&
+      (v.kind !== "event" || (v.all_day && v.schedule_kind === "hourly"))
+    )
+      ctx.addIssue({
+        code: "custom",
+        path: ["schedule_kind"],
+        message: "Kies een passende herhaling voor deze afspraak.",
       });
     for (const key of ["due_at", "end_at"] as const)
       if (v[key] && Number.isNaN(Date.parse(v[key])))
@@ -118,6 +225,42 @@ export const itemSchema = z
   });
 export type Item = z.infer<typeof itemSchema>;
 export type Member = { user_id: string; display_name: string };
+/** PostgreSQL dates use null; forms use empty strings. Keep one conversion boundary. */
+export function readItem(row: Record<string, unknown>): Item {
+  return itemSchema.parse({
+    ...row,
+    due_at: row.due_at || "",
+    end_at: row.end_at || "",
+    start_date: row.start_date || "",
+    end_date: row.end_date || "",
+    schedule_until: row.schedule_until || "",
+  });
+}
+export function itemForDatabase(
+  item: Item,
+  update = false,
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {
+    ...item,
+    due_at: item.due_at || null,
+    end_at: item.end_at || null,
+    start_date: item.start_date || null,
+    end_date: item.end_date || null,
+    schedule_until: item.schedule_until || null,
+  };
+  for (const key of [
+    "deleted_at",
+    "integration_id",
+    "source_calendar_id",
+    "source_event_id",
+    "source_version",
+    "source_hidden",
+    "source_deleted",
+  ])
+    delete result[key];
+  if (update) delete result.schedule_exceptions;
+  return result;
+}
 export function prepareRepeat(item: Item, previous?: Item): Item {
   if (item.repeat_kind === "none")
     return { ...item, repeat_anchor: null, repeat_index: 0 };
@@ -146,6 +289,24 @@ export function blankItem(
     kind,
     title: "",
     description: "",
+    deleted_at: null,
+    reviewed_at: null,
+    integration_id: null,
+    source_calendar_id: null,
+    source_event_id: null,
+    source_version: null,
+    source_hidden: false,
+    source_deleted: false,
+    list_type: "none",
+    event_type: "standard",
+    all_day: false,
+    busy: true,
+    start_date: "",
+    end_date: "",
+    schedule_kind: "none",
+    schedule_until: "",
+    schedule_count: null,
+    schedule_exceptions: [],
     checklist: [],
     import_uid: null,
     repeat_kind: "none",

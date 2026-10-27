@@ -39,6 +39,11 @@ export async function previewCalendar(
     );
 
   for (const component of zoneComponents) {
+    const knownId = String(component.getFirstPropertyValue("tzid") || "");
+    try {
+      new Intl.DateTimeFormat("nl", { timeZone: knownId });
+      if (knownId) continue;
+    } catch {}
     const periods = component.getAllSubcomponents();
     if (periods.length > 8)
       throw Error(

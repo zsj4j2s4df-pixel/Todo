@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.todo-ai]
 verify_jwt = true
+
+[functions.todo-connect]
+verify_jwt = true
+
+[functions.todo-mcp]
+verify_jwt = false

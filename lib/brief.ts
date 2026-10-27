@@ -1,11 +1,14 @@
 import type { Item } from "./model";
+import { eventInstances } from "./schedule";
 export function dayBrief(items: Item[], now: Date) {
   const start = new Date(now);
   start.setHours(0, 0, 0, 0);
   const end = new Date(start);
   end.setDate(end.getDate() + 1);
-  const open = items.filter((i) => i.status === "open");
+  const open = items.filter((i) => i.status === "open" && !i.deleted_at);
   const events = open
+    .filter((i) => i.kind === "event")
+    .flatMap((i) => eventInstances(i, start, end))
     .filter(
       (i) =>
         i.kind === "event" &&
@@ -28,6 +31,8 @@ export function dayBrief(items: Item[], now: Date) {
   for (let a = 0; a < events.length; a++)
     for (let b = a + 1; b < events.length; b++)
       if (
+        events[a].busy !== false &&
+        events[b].busy !== false &&
         events[a].end_at &&
         events[b].end_at &&
         Date.parse(events[a].due_at) < Date.parse(events[b].end_at) &&

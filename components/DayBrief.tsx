@@ -8,8 +8,10 @@ export default function DayBrief({
   items,
   onOpen,
   preferences: p,
+  noteCount = 0,
 }: {
   items: Item[];
+  noteCount?: number;
   preferences: BriefPreferences;
   onOpen: (item: Item) => void;
 }) {
@@ -34,7 +36,7 @@ export default function DayBrief({
       {brief.next.length ? (
         <ol>
           {brief.next.map((i) => (
-            <li key={i.id}>
+            <li key={`${i.id}-${i.due_at}`}>
               <button
                 className="text-button"
                 aria-label={`Open stap: ${i.title}`}
@@ -46,10 +48,12 @@ export default function DayBrief({
                 <small>
                   {" "}
                   ·{" "}
-                  {new Date(i.due_at).toLocaleTimeString("nl-NL", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {i.all_day
+                    ? "hele dag"
+                    : new Date(i.due_at).toLocaleTimeString("nl-NL", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                 </small>
               )}
             </li>
@@ -58,6 +62,14 @@ export default function DayBrief({
       ) : (
         <p className="hint">
           Geen geplande stappen voor vandaag. Ook ruimte is een goed plan.
+        </p>
+      )}
+      {p.notes_enabled && noteCount > 0 && (
+        <p>
+          {noteCount} onverwerkte{" "}
+          {noteCount === 1 ? "gedachte wacht" : "gedachten wachten"} in je
+          persoonlijke inbox hieronder. Kies vandaag iets om te verwerken of
+          bewust te bewaren.
         </p>
       )}
       {p.clashes_enabled && overlaps.length > 0 && (

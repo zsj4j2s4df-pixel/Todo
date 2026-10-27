@@ -1,5 +1,6 @@
 // Own shared-secret authentication below: gateway verify_jwt is deliberately off.
 // VAPID credentials stay in Vault; service_role exists only in this server runtime.
+import { scheduledSync } from "../todo-connect/service.ts";
 import { hangupRealtime } from "../_shared/realtime.ts";
 import { fetchWeather } from "../_shared/weather.ts";
 import webpush from "npm:web-push@3.6.7";
@@ -109,5 +110,7 @@ Deno.serve(async (req: Request) => {
   } catch {
     return new Response("Acknowledgement unavailable", { status: 503 });
   }
-  return Response.json({ processed: data.jobs.length, accepted });
+  let integrations={synced:0,failed:0};
+  try{integrations=await scheduledSync(client,Deno.env);}catch{/* Retry via the next authenticated scheduled run. */}
+  return Response.json({ processed: data.jobs.length, accepted, integrations });
 });

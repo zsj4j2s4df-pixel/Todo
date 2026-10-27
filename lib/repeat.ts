@@ -13,19 +13,35 @@ export function nextOccurrence(item: Item, now = new Date()) {
     .toPlainDate()
     .until(localNow.toPlainDate(), { largestUnit: "days" }).days;
   const estimate =
-    item.repeat_kind === "monthly"
-      ? (localNow.year - anchor.year) * 12 + localNow.month - anchor.month
-      : item.repeat_kind === "weekly"
-        ? Math.trunc(days / 7)
-        : days;
+    item.repeat_kind === "hourly"
+      ? Math.floor(
+          (+now - Date.parse(item.repeat_anchor || item.due_at)) / 3600000,
+        )
+      : item.repeat_kind === "yearly"
+        ? localNow.year - anchor.year
+        : item.repeat_kind === "fortnightly"
+          ? Math.trunc(days / 14)
+          : item.repeat_kind === "monthly"
+            ? (localNow.year - anchor.year) * 12 + localNow.month - anchor.month
+            : item.repeat_kind === "weekly"
+              ? Math.trunc(days / 7)
+              : days;
   let index = Math.max(item.repeat_index + 1, estimate, 1);
   function at(n: number) {
+    if (item.repeat_kind === "hourly")
+      return Temporal.Instant.from(item.repeat_anchor || item.due_at).add({
+        hours: n,
+      });
     const duration =
-      item.repeat_kind === "monthly"
-        ? { months: n }
-        : item.repeat_kind === "weekly"
-          ? { weeks: n }
-          : { days: n };
+      item.repeat_kind === "yearly"
+        ? { years: n }
+        : item.repeat_kind === "fortnightly"
+          ? { weeks: n * 2 }
+          : item.repeat_kind === "monthly"
+            ? { months: n }
+            : item.repeat_kind === "weekly"
+              ? { weeks: n }
+              : { days: n };
     return anchor
       .add(duration)
       .toZonedDateTime(item.timezone, { disambiguation: "later" })

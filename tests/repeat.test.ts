@@ -3,7 +3,10 @@ import { PGlite } from "@electric-sql/pglite";
 import { readFileSync, readdirSync } from "node:fs";
 import { blankItem, itemSchema } from "../lib/model";
 import { nextOccurrence, completeLocal, prepareRepeat } from "../lib/repeat";
-const vectors: [string, "daily" | "weekly" | "monthly", string, string][] = [
+const vectors: [string, "hourly" | "daily" | "weekly" | "fortnightly" | "monthly" | "yearly", string, string][] = [
+  ["2027-10-31T00:30:00Z","hourly","2027-10-31T00:40:00Z","2027-10-31T01:30:00Z"],
+  ["2027-03-14T01:30:00Z","fortnightly","2027-03-15T12:00:00Z","2027-03-28T01:30:00Z"],
+  ["2028-02-29T08:00:00Z","yearly","2028-03-01T12:00:00Z","2029-02-28T08:00:00Z"],
   [
     "2027-03-27T01:30:00Z",
     "daily",
@@ -99,7 +102,7 @@ test("Postgres agrees with local dates and preserves privacy, idempotence and ro
       (n) =>
         n.endsWith(".sql") &&
         !n.endsWith("_todo_push_schedule.sql") &&
-        !n.endsWith("_todo_realtime_schedule.sql"),
+        !n.endsWith("_todo_realtime_schedule.sql") && !n.endsWith("_todo_integrations_schedule.sql"),
     )
     .sort())
     await db.exec(readFileSync("supabase/migrations/" + file, "utf8"));

@@ -1357,3 +1357,10 @@ a {
 .text-button{border-bottom:0;}
 .text-button:hover{border:0;background-image:var(--pen-rule);background-repeat:no-repeat;background-position:bottom;background-size:100% 3px;}
 .due-reminders{border:6px solid transparent;border-image:url('/icons/pen-frame.png') 12 stretch;border-image-outset:2px;}
+
+.personal-inbox{margin:24px 0;padding:24px;}
+.inbox-entry{padding:14px 0;background-image:var(--pen-rule);background-repeat:no-repeat;background-position:bottom;background-size:100% 4px;}
+.note-text{white-space:pre-wrap;overflow-wrap:anywhere;}
+.personal-inbox textarea{min-height:75px;}
+.calendar-options{margin:16px 0;}
+.calendar-options button{min-height:44px;}

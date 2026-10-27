@@ -10,7 +10,10 @@
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
     "test:cloud": "playwright test --config=playwright.cloud.config.ts",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build && wrangler deploy",
+    "sync:contracts": "node scripts/build-server-contracts.mjs",
+    "prebuild": "npm run sync:contracts",
+    "pretest": "npm run sync:contracts"
   },
   "dependencies": {
     "@js-temporal/polyfill": "0.5.1",
