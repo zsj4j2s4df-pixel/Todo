@@ -1,0 +1,28 @@
+name: Todo checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npm run typecheck
+      - run: npm exec --yes --package=deno@2.5.7 -- deno test --node-modules-dir=none --allow-env supabase/functions/todo-connect/protocol_test.ts supabase/functions/todo-mcp/protocol_test.ts supabase/functions/push-dispatch/protocol_test.ts
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-results
+          path: test-results/
