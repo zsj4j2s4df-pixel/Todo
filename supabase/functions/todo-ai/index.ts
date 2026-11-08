@@ -1,20 +1,19 @@
 import { createClient } from "npm:@supabase/supabase-js@2.118.0";
 import { realtimeRequest } from "./realtime.ts";
 import { answerQuestion } from "./chat.ts";
-const origins = [
-  "https://todo.zsj4j2s4df.workers.dev",
-  "http://localhost:3000",
-  "http://127.0.0.1:3000",
-];
+import {
+  APP_ORIGIN,
+  isAllowedAppOrigin,
+} from "../_shared/generated/site.ts";
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get("origin");
-  if (origin && !origins.includes(origin))
+  if (origin && !isAllowedAppOrigin(origin))
     return new Response("Origin not allowed", { status: 403 });
   const headers = {
     "Content-Type": "application/json",
     "Cache-Control": "no-store",
     Vary: "Origin",
-    "Access-Control-Allow-Origin": origin || origins[0],
+    "Access-Control-Allow-Origin": origin || APP_ORIGIN,
     "Access-Control-Allow-Headers":
       "authorization,apikey,content-type,x-client-info,x-todo-action",
     "Access-Control-Allow-Methods": "POST,OPTIONS",

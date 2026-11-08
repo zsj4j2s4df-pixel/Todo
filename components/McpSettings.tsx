@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { mcpRequest, mcpUrl } from "@/lib/mcp";
+import { MCP_RESOURCE_METADATA_URL } from "@/lib/site";
 import { supabase } from "@/lib/supabase";
 export default function McpSettings() {
   const [grants, setGrants] = useState<any[]>([]),
@@ -13,10 +14,10 @@ export default function McpSettings() {
     if (!supabase) return;
     void Promise.all([
       mcpRequest("grants"),
-      fetch(
-        "https://todo.zsj4j2s4df.workers.dev/.well-known/oauth-protected-resource/mcp",
-        { credentials: "omit", referrerPolicy: "no-referrer" },
-      )
+      fetch(MCP_RESOURCE_METADATA_URL, {
+        credentials: "omit",
+        referrerPolicy: "no-referrer",
+      })
         .then(async (r) => r.ok && (await r.json()).resource === mcpUrl)
         .catch(() => false),
     ])

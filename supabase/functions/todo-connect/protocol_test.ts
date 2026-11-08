@@ -154,7 +154,7 @@ Deno.test(
     const u = new URL(result.url);
     assert(
       u.searchParams.get("redirect_uri") ===
-        "https://todo.zsj4j2s4df.workers.dev/",
+        "https://todo.jesseboontje.workers.dev/",
     );
     assert(u.searchParams.get("scope")?.includes("calendar.events.readonly"));
     assert(!u.searchParams.get("scope")?.includes("calendar.events "));

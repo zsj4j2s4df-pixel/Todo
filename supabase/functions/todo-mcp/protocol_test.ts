@@ -265,7 +265,7 @@ Deno.test(
             scopes: ["todo:read"],
           },
           "fixture-app-session",
-          { Origin: "https://todo.zsj4j2s4df.workers.dev" },
+          { Origin: "https://todo.jesseboontje.workers.dev" },
         ),
         a,
         actor,
@@ -292,6 +292,23 @@ Deno.test(
       env,
     );
     assert(blocked.status === 403);
+    for (const origin of [
+      "https://todo.zsj4j2s4df.workers.dev",
+      "https://functie-verhuis-cloudflare-todo.jesseboontje.workers.dev",
+    ]) {
+      const allowed = await handleMcp(
+        req(
+          "/",
+          { action: "consent_info", request_id: requestId },
+          "fixture-app-session",
+          { Origin: origin },
+        ),
+        admin(),
+        actor,
+        env,
+      );
+      assert(allowed.status !== 403, origin);
+    }
   },
 );
 Deno.test(

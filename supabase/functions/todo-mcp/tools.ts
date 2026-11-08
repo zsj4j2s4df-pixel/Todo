@@ -1,3 +1,4 @@
+import { APP_ORIGIN } from "../_shared/generated/site.ts";
 import { z } from "npm:zod@4.1.5";
 import {
   itemSchema,
@@ -339,7 +340,7 @@ export async function callTool(
   });
   return {
     ...proposal,
-    confirmation_url: `https://todo.zsj4j2s4df.workers.dev/?mcp_proposal=${proposal.proposal_id}`,
+    confirmation_url: `${APP_ORIGIN}/?mcp_proposal=${proposal.proposal_id}`,
     notice:
       "Alleen voorbereid. De gebruiker moet de link openen, inhoud controleren en bevestigen. Meld nog niet dat de wijziging is uitgevoerd.",
   };
