@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "todo",
-  "account_id": "e9922d90d4223d8522e44cb000c5d608",
+  "account_id": "7d5fa36f0987a01dcf47b34791495fa6",
   "main": "worker/index.js",
   "compatibility_date": "2026-10-22",
   "compatibility_flags": ["nodejs_compat"],
