@@ -11,7 +11,7 @@ test("het app-adres staat op één plek en de database-migratie gebruikt hetzelf
   expect(APP_ORIGIN).toBe("https://todo.jesseboontje.workers.dev");
   expect(MCP_RESOURCE).toBe(APP_ORIGIN + "/mcp");
   const migration = readFileSync(
-    "supabase/migrations/20261108120000_todo_mcp_resource.sql",
+    "supabase/migrations/20261108150116_todo_mcp_resource.sql",
     "utf8",
   );
   expect(migration).toContain(`'${MCP_RESOURCE}'::text`);
