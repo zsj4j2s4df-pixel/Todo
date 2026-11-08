@@ -18,9 +18,7 @@ Lees deze documenten in plaats van hier te herhalen:
 - `docs/operations/IMPLEMENTATION_STATUS.md`: wat gebouwd, getest en nog niet geactiveerd is.
 - `AGENTS.md` en `.agents/skills/todo-icon-style/SKILL.md`: verplichte icoonstijl.
 - `docs/product/`, `docs/architecture/`, `docs/design/`: product, opbouw, rechten en stijl.
-- `docs/operations/`: AI, koppelingen/MCP, push, routines en werkregels.
-
-De korte `.md`-bestanden in de hoofdmap (AI, API, ARCHITECTURE, DATABASE, DESIGN_SYSTEM, INTEGRATIONS, MCP, PRIVACY, PRODUCT_SPEC, PWA, ROADMAP, SECURITY) zijn oude stubs. Bij twijfel gaat `docs/` voor.
+- `docs/operations/`: AI, koppelingen/MCP, push, PWA, routines en werkregels.
 
 ## Vaste regels
 - Nooit direct op main. Volg de skill functie-bouwen.
@@ -30,3 +28,4 @@ De korte `.md`-bestanden in de hoofdmap (AI, API, ARCHITECTURE, DATABASE, DESIGN
 
 ## Beslissingen
 - 2026-11-08: CLAUDE.md toegevoegd als korte wegwijzer naar de bestaande documenten.
+- 2026-11-08: twaalf oude Engelse kladjes uit de hoofdmap verwijderd; `docs/` is de enige bron. PWA.md verhuisd naar `docs/operations/`.
