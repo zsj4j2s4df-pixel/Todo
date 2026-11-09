@@ -2,9 +2,11 @@
 
 Nederlandse taken-, agenda- en herinneringenapp voor jezelf en je huishouden. Licht papier, koffiebruine accenten en één handgetekende Canva-huisstijl. Nieuwe items zijn privé totdat je ze bewust deelt.
 
-**App:** https://todo.zsj4j2s4df.workers.dev/
+**App:** https://todo.jesseboontje.workers.dev/
 
-**MCP voor ChatGPT/Claude:** https://todo.zsj4j2s4df.workers.dev/mcp
+**MCP voor ChatGPT/Claude:** https://todo.jesseboontje.workers.dev/mcp
+
+Het webadres staat op één plek: `lib/site.ts` (`APP_ORIGIN`). Verhuizen naar een ander adres is die ene regel aanpassen, `npm run sync:contracts` draaien (gebeurt ook bij `npm test` en `npm run build`) en een nieuwe migratie die `private.mcp_resource()` aanpast. De oude migraties blijven ongewijzigd. Het oude adres `todo.zsj4j2s4df.workers.dev` blijft voorlopig toegestaan voor de serverfuncties (`LEGACY_APP_ORIGINS`).
 
 [Actuele oplevering en testgrenzen](docs/operations/IMPLEMENTATION_STATUS.md) · [Agenda/mail/MCP aansluiten](docs/operations/CONNECTIONS.md) · [Uitvoering issue #3](docs/operations/ISSUE_3_PROGRESS.md)
 
@@ -43,7 +45,7 @@ npx playwright install chromium
 npm run test:cloud
 ```
 
-Voor lokale browserflows: bouw met lege `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` en `NEXT_PUBLIC_SUPABASE_ANON_KEY`, voer `npm run test:e2e` uit en bouw daarna weer met de normale configuratie. `TODO_TEST_URL=https://todo.zsj4j2s4df.workers.dev npm run test:cloud` controleert de publieke site; provider-/AI-verzoeken worden in die tests met synthetische fixtures onderschept. Er worden geen echte mails, uitnodigingen of betaalde modelcalls verzonden.
+Voor lokale browserflows: bouw met lege `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` en `NEXT_PUBLIC_SUPABASE_ANON_KEY`, voer `npm run test:e2e` uit en bouw daarna weer met de normale configuratie. `TODO_TEST_URL=https://todo.jesseboontje.workers.dev npm run test:cloud` controleert de publieke site; provider-/AI-verzoeken worden in die tests met synthetische fixtures onderschept. Er worden geen echte mails, uitnodigingen of betaalde modelcalls verzonden.
 
 Core-validatie en datumlogica voor Deno worden mechanisch uit `lib/` gegenereerd via `npm run sync:contracts`; geen tweede contract handmatig aanpassen. Deno-protocoltests staan naast de Edge Functions en hebben geen netwerkpermissie nodig:
 

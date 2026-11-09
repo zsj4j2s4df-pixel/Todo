@@ -1,7 +1,7 @@
 # Agenda, mail en assistenten aansluiten
 
-App: https://todo.zsj4j2s4df.workers.dev/
-MCP: https://todo.zsj4j2s4df.workers.dev/mcp
+App: https://todo.jesseboontje.workers.dev/
+MCP: https://todo.jesseboontje.workers.dev/mcp
 
 De publicatie wordt vastgelegd in ISSUE_3_PROGRESS.md. Een bereikbare server betekent niet dat persoonlijke accounts al verbonden of in beide assistenten getest zijn. Er zijn geen persoonlijke provideraccounts of uitnodigingen tijdens de automatische tests gebruikt.
 
@@ -9,14 +9,14 @@ De publicatie wordt vastgelegd in ISSUE_3_PROGRESS.md. Een bereikbare server bet
 
 Ieder registreert zich met een eigen e-mailadres via Todo. Privégegevens en notities horen bij die Supabase-identiteit. Een huishouden koppelen deelt niet automatisch mail, agenda of inbox. Alleen expliciete toewijzingen verschijnen in de betreffende persoonlijke inbox. Bronafspraken blijven privé; alleen Todo-items hebben de deelkeuze.
 
-Bevestigingsmail opnieuw aanvragen en wachtwoordherstel zijn beschikbaar. Beide keren terug naar de root van de Todo-site. Controleer in Supabase Authentication de Site URL en toegestane redirect-URL `https://todo.zsj4j2s4df.workers.dev/`. SMTP/senderinstellingen zijn niet leesbaar via de aangesloten Supabase-tools. Daarom zijn verzender, domeinverificatie, eventuele productiebeperkingen en daadwerkelijke bezorging nog niet bevestigd. Test registratie en herstel bewust met je eigen adres. Gebruik voor productie een geverifieerde eigen verzender indien Supabase dat vereist; geen betaald plan of persoonlijke mailhosting is gewijzigd.
+Bevestigingsmail opnieuw aanvragen en wachtwoordherstel zijn beschikbaar. Beide keren terug naar de root van de Todo-site. Controleer in Supabase Authentication de Site URL en toegestane redirect-URL `https://todo.jesseboontje.workers.dev/`. SMTP/senderinstellingen zijn niet leesbaar via de aangesloten Supabase-tools. Daarom zijn verzender, domeinverificatie, eventuele productiebeperkingen en daadwerkelijke bezorging nog niet bevestigd. Test registratie en herstel bewust met je eigen adres. Gebruik voor productie een geverifieerde eigen verzender indien Supabase dat vereist; geen betaald plan of persoonlijke mailhosting is gewijzigd.
 
 ## Agenda en Gmail
 
 Instellingen → Agenda en mail verbinden. Eerst verbinden, daarna agenda's kiezen. Schrijven vereist aanvullende providerrechten én een bewuste keuze per agenda. Wijzigingen of annuleringen kunnen deelnemers informeren; de app vraagt daarvoor bevestiging. Gmail zoekt maximaal tien geselecteerde berichten en bewaart alleen zelfgekozen berichten als privénotitie. Verwerk die in Todo als gecontroleerde taak of afspraak; er wordt geen mail verzonden, verwijderd of doorgestuurd en geen bijlage opgehaald.
 
 - iCloud: gebruik een app-specifiek wachtwoord uit https://account.apple.com/ met tweefactorauthenticatie. Vul dit uitsluitend in Todo in. Nooit het normale Apple-wachtwoord. Het serverwachtwoord staat versleuteld in Supabase Vault.
-- Google Calendar/Gmail: registreer een web-OAuth-client, activeer Calendar API en Gmail API en configureer consent/testgebruikers. Exacte redirect-URI: `https://todo.zsj4j2s4df.workers.dev/`. Bewaar `GOOGLE_CLIENT_ID` en `GOOGLE_CLIENT_SECRET` uitsluitend als Supabase Edge Function-secrets. Google-verificatie en eventueel aanvullende vereisten voor de gevoelige/beperkte Gmail-scope moeten vóór brede publieke toegang worden afgehandeld. Een eigen testronde met toegelaten testaccounts kan eerder.
+- Google Calendar/Gmail: registreer een web-OAuth-client, activeer Calendar API en Gmail API en configureer consent/testgebruikers. Exacte redirect-URI: `https://todo.jesseboontje.workers.dev/` (pas de OAuth-client in Google/Microsoft aan als die nog het oude adres heeft). Bewaar `GOOGLE_CLIENT_ID` en `GOOGLE_CLIENT_SECRET` uitsluitend als Supabase Edge Function-secrets. Google-verificatie en eventueel aanvullende vereisten voor de gevoelige/beperkte Gmail-scope moeten vóór brede publieke toegang worden afgehandeld. Een eigen testronde met toegelaten testaccounts kan eerder.
 - Outlook privé: registreer een Microsoft-webapp die persoonlijke Microsoft-accounts accepteert. De adapter gebruikt `/consumers`, gedelegeerde `User.Read`, `Calendars.Read`, en pas na opt-in `Calendars.ReadWrite` met `offline_access`. Dezelfde exacte redirect-URI. Secrets: `MICROSOFT_CLIENT_ID` en `MICROSOFT_CLIENT_SECRET`. Geen Microsoft 365-werkaccount vereist.
 
 Ontbrekende Google-/Microsoft-configuratie maakt de betreffende verbindknop uitgeschakeld met uitleg. Geen sleutel in chat of Git plaatsen. De bestaande OpenAI-sleutel wordt behouden; een AI-sleutel maakt geen providerregistratie of ChatGPT-/Claude-aansluiting aan.
