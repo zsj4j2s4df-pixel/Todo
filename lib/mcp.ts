@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-export const mcpUrl = "https://todo.zsj4j2s4df.workers.dev/mcp";
+export { MCP_RESOURCE as mcpUrl } from "./site";
 export async function mcpRequest(
   action: string,
   params: Record<string, unknown> = {},

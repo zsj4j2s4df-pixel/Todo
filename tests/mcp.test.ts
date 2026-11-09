@@ -3,6 +3,7 @@ import { PGlite } from "@electric-sql/pglite";
 import { readFileSync, readdirSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { blankItem } from "../lib/model";
+import { MCP_RESOURCE } from "../lib/site";
 const hash = (value: string) =>
   createHash("sha256").update(value).digest("hex");
 test("MCP OAuth binds PKCE, audience and user; proposals require app confirmation, are idempotent and revoke immediately", async () => {
@@ -30,7 +31,7 @@ test("MCP OAuth binds PKCE, audience and user; proposals require app confirmatio
       ])
     ).rows[0].v;
   };
-  const resource = "https://todo.zsj4j2s4df.workers.dev/mcp",
+  const resource = MCP_RESOURCE,
     redirect_uri = "https://client.example.test/callback",
     challenge = "A".repeat(43);
   await as(a);
@@ -58,6 +59,17 @@ test("MCP OAuth binds PKCE, audience and user; proposals require app confirmatio
       challenge,
       scopes: ["todo:read"],
       resource,
+    }),
+  ).rejects.toThrow();
+  expect(MCP_RESOURCE).toBe("https://todo.jesseboontje.workers.dev/mcp");
+  await expect(
+    api("authorize", {
+      client_id: client.client_id,
+      redirect_uri,
+      state: "s",
+      challenge,
+      scopes: ["todo:read"],
+      resource: "https://todo.zsj4j2s4df.workers.dev/mcp",
     }),
   ).rejects.toThrow();
   const consent = await api("consent_info", {

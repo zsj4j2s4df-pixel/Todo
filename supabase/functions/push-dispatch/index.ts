@@ -1,3 +1,4 @@
+import { APP_ORIGIN } from "../_shared/generated/site.ts";
 // Own shared-secret authentication below: gateway verify_jwt is deliberately off.
 // VAPID credentials stay in Vault; service_role exists only in this server runtime.
 import { scheduledSync } from "../todo-connect/service.ts";
@@ -77,7 +78,7 @@ Deno.serve(async (req: Request) => {
           {
             TTL: 3600,
             vapidDetails: {
-              subject: "https://todo.zsj4j2s4df.workers.dev",
+              subject: APP_ORIGIN,
               publicKey: data.publicKey,
               privateKey: data.privateKey,
             },
