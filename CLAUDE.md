@@ -8,7 +8,8 @@ Privégebruik: Jesse en huisgenoten, ieder met een eigen account. Vooral op de i
 
 ## Live
 - Productie: https://todo.jesseboontje.workers.dev/ (MCP-connector: `/mcp`). Verhuisd op 2026-11-09 van todo.zsj4j2s4df.workers.dev; die oude Worker blijft draaien tot Jesse zegt dat hij weg mag.
-- Cloudflare: Worker `todo` op het account jesseboontje@hotmail.com, zie `wrangler.jsonc`. Dit is een Worker, geen Cloudflare Pages. Previews: elke branch krijgt een proeflink `<branch>-todo.jesseboontje.workers.dev` via Workers Builds. Een push start nog niet vanzelf een build; die wordt met de hand of via de Cloudflare-API gestart.
+- Cloudflare: Worker `todo` op het account jesseboontje@hotmail.com, zie `wrangler.jsonc`. Dit is een Worker, geen Cloudflare Pages. Workers Builds is gekoppeld aan GitHub: een push naar `main` deployt productie, elke andere branch krijgt vanzelf een proeflink `<branch>-todo.jesseboontje.workers.dev` (via `wrangler preview`, daarom staat er een `previews`-blok in `wrangler.jsonc`). Wacht na een push op de geslaagde build voordat je de link meldt.
+- Toegang voor Claude: in de cloudomgeving "Todo" staan een Cloudflare-sleutel (Workers en Workers Builds) en een Supabase-sleutel. Daarmee kan Claude builds, variabelen, functies en auth-instellingen zelf beheren.
 - Webadres: staat alleen in `lib/site.ts`. Een verhuizing is die regel aanpassen plus een nieuwe migratie voor `private.mcp_resource()`. Oude migraties nooit aanpassen.
 - Backend: Supabase-project `pyqvxwxpsngbndkrlajz` (migraties staan live, niet opnieuw handmatig uitvoeren)
 - GitHub: zsj4j2s4df-pixel/Todo
@@ -32,3 +33,4 @@ De korte `.md`-bestanden in de hoofdmap (AI, API, ARCHITECTURE, DATABASE, DESIGN
 ## Beslissingen
 - 2026-11-08: CLAUDE.md toegevoegd als korte wegwijzer naar de bestaande documenten.
 - 2026-11-09: verhuisd naar todo.jesseboontje.workers.dev; adres centraal in `lib/site.ts`, MCP-adres in `private.mcp_resource()`. Valkuil: zonder de drie `NEXT_PUBLIC_…`-build-variabelen in Workers Builds werkt inloggen niet.
+- 2026-11-11: GitHub opnieuw gekoppeld aan Cloudflare; automatische builds en previews werken. Valkuil: opnieuw koppelen wist de build-variabelen, zet ze daarna terug en controleer ze.
