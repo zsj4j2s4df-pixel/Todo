@@ -1,7 +1,10 @@
 # Oplevering 27 oktober 2026
 
-App: https://todo.zsj4j2s4df.workers.dev/
-Connector: https://todo.zsj4j2s4df.workers.dev/mcp
+App: https://todo.jesseboontje.workers.dev/
+Connector: https://todo.jesseboontje.workers.dev/mcp
+
+## Verhuizing 8-9 november 2026
+De app draait nu op het Cloudflare-account jesseboontje@hotmail.com (Worker `todo`, subdomein `jesseboontje`). Het webadres staat centraal in `lib/site.ts`. Migratie `20261108150116_todo_mcp_resource` zet het MCP-adres in `private.mcp_resource()`. Live Edge Functions: `todo-connect` v4, `todo-mcp` v4, `todo-ai` v5, `push-dispatch` v8. De serverfuncties staan tijdelijk ook het oude adres en proeflinks (`*-todo.jesseboontje.workers.dev`) toe. De Supabase Site URL staat op het nieuwe adres; het oude adres blijft in de toegestane redirect-URL's. De oude Worker op het oude account blijft draaien tot de eigenaar zegt dat hij weg mag. Workers Builds is gekoppeld aan GitHub met productie `main` en previews voor andere branches; een push start nog geen automatische build, die wordt met de hand of via de Cloudflare-API gestart (nog uit te zoeken).
 
 De bestaande taken, privacy, agenda, herinneringen, weerbriefing, push en tekst-/spraak-AI zijn uitgebreid met de bouwopdracht uit issue #3. De gebruiker heeft toestemming gegeven voor publicatie en samenvoegen via PR #2. De actuele publicatie-/mergecontrole staat in ISSUE_3_PROGRESS.md.
 

@@ -1,3 +1,4 @@
+import { APP_ORIGIN } from "../_shared/generated/site.ts";
 import webpush from "npm:web-push@3.6.7";
 import { createECDH, randomBytes } from "node:crypto";
 Deno.test(
@@ -22,7 +23,7 @@ Deno.test(
       {
         TTL: 3600,
         vapidDetails: {
-          subject: "https://todo.zsj4j2s4df.workers.dev",
+          subject: APP_ORIGIN,
           ...vapid,
         },
       },

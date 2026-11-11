@@ -3,7 +3,14 @@ import { createHash } from "node:crypto";
 const root = new URL("../", import.meta.url),
   out = new URL("supabase/functions/_shared/generated/", root);
 mkdirSync(out, { recursive: true });
-for (const name of ["model", "schedule", "workspace", "brief", "ical-zone"]) {
+for (const name of [
+  "model",
+  "schedule",
+  "workspace",
+  "brief",
+  "ical-zone",
+  "site",
+]) {
   const source = readFileSync(new URL(`lib/${name}.ts`, root), "utf8");
   const hash = createHash("sha256").update(source).digest("hex");
   const converted = source

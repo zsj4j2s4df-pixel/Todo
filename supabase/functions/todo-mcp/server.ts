@@ -7,9 +7,13 @@ import {
 } from "../todo-connect/policy.ts";
 import { connectorAction } from "../todo-connect/service.ts";
 import type { Env } from "../todo-connect/providers.ts";
-export const ORIGIN = "https://todo.zsj4j2s4df.workers.dev",
-  RESOURCE = ORIGIN + "/mcp",
-  ISSUER = ORIGIN + "/mcp-auth";
+import {
+  APP_ORIGIN as ORIGIN,
+  MCP_RESOURCE as RESOURCE,
+  MCP_ISSUER as ISSUER,
+  isAllowedAppOrigin,
+} from "../_shared/generated/site.ts";
+export { ORIGIN, RESOURCE, ISSUER };
 const uuid = (v: unknown) =>
   typeof v === "string" &&
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
@@ -390,12 +394,7 @@ export async function handleMcp(
     }
     if (path === "/" && req.method === "POST") {
       const origin = req.headers.get("origin");
-      if (
-        origin &&
-        ![ORIGIN, "http://localhost:3000", "http://127.0.0.1:3000"].includes(
-          origin,
-        )
-      )
+      if (origin && !isAllowedAppOrigin(origin))
         return json({ error: "Origin not allowed" }, 403);
       const jwt = req.headers.get("authorization")?.replace(/^Bearer /i, "");
       if (!jwt) return json({ error: "Log eerst in." }, 401);

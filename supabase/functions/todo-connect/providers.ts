@@ -46,7 +46,8 @@ export type SourceEvent = {
 };
 export type Calendar = { id: string; name: string; writable: boolean };
 export type Env = { get: (name: string) => string | undefined };
-export const APP_ORIGIN = "https://todo.zsj4j2s4df.workers.dev";
+export { APP_ORIGIN } from "../_shared/generated/site.ts";
+import { APP_ORIGIN } from "../_shared/generated/site.ts";
 export function configuration(env: Env) {
   return {
     google_calendar:
